@@ -3,6 +3,9 @@
   "owner": {
     "name": "Artur Karapetyan"
   },
+  "metadata": {
+    "description": "BPMN 2.0 tooling for Claude Code: read, model, validate, and lint .bpmn process diagrams."
+  },
   "plugins": [
     {
       "name": "bpmn",
