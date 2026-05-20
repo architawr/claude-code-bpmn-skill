@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_approval" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_approval" isExecutable="false">
+    <bpmn:startEvent id="Start" name="Заявка получена">
+      <bpmn:outgoing>s1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Review" name="Проверить заявку">
+      <bpmn:incoming>s1</bpmn:incoming>
+      <bpmn:outgoing>s2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_amount" name="Сумма больше 10000?" gatewayDirection="Diverging" default="f_small">
+      <bpmn:incoming>s2</bpmn:incoming>
+      <bpmn:outgoing>f_big</bpmn:outgoing>
+      <bpmn:outgoing>f_small</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="ManagerApprove" name="Согласование руководителем">
+      <bpmn:incoming>f_big</bpmn:incoming>
+      <bpmn:outgoing>s3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="AutoApprove" name="Автоматическое одобрение">
+      <bpmn:incoming>f_small</bpmn:incoming>
+      <bpmn:outgoing>s4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:parallelGateway id="Gw_join" name="" gatewayDirection="Converging">
+      <bpmn:incoming>s3</bpmn:incoming>
+      <bpmn:incoming>s4</bpmn:incoming>
+      <bpmn:outgoing>s5</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:userTask id="Notify" name="Уведомить заявителя">
+      <bpmn:incoming>s5</bpmn:incoming>
+      <bpmn:outgoing>s6</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="End" name="Заявка обработана">
+      <bpmn:incoming>s6</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="s1" sourceRef="Start" targetRef="Review" />
+    <bpmn:sequenceFlow id="s2" sourceRef="Review" targetRef="Gw_amount" />
+    <bpmn:sequenceFlow id="f_big" name="да" sourceRef="Gw_amount" targetRef="ManagerApprove">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${amount &gt; 10000}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="f_small" name="нет" sourceRef="Gw_amount" targetRef="AutoApprove" />
+    <bpmn:sequenceFlow id="s3" sourceRef="ManagerApprove" targetRef="Gw_join" />
+    <bpmn:sequenceFlow id="s4" sourceRef="AutoApprove" targetRef="Gw_join" />
+    <bpmn:sequenceFlow id="s5" sourceRef="Gw_join" targetRef="Notify" />
+    <bpmn:sequenceFlow id="s6" sourceRef="Notify" targetRef="End" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Process_approval">
+    <bpmndi:BPMNPlane id="BPMNPlane_Process_approval" bpmnElement="Process_approval">
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="57" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Review_di" bpmnElement="Review">
+        <dc:Bounds x="175" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_amount_di" bpmnElement="Gw_amount" isMarkerVisible="true">
+        <dc:Bounds x="350" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ManagerApprove_di" bpmnElement="ManagerApprove">
+        <dc:Bounds x="475" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_join_di" bpmnElement="Gw_join">
+        <dc:Bounds x="650" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Notify_di" bpmnElement="Notify">
+        <dc:Bounds x="775" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_di" bpmnElement="End">
+        <dc:Bounds x="957" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AutoApprove_di" bpmnElement="AutoApprove">
+        <dc:Bounds x="475" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="s1_di" bpmnElement="s1">
+        <di:waypoint x="93" y="70" />
+        <di:waypoint x="175" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s2_di" bpmnElement="s2">
+        <di:waypoint x="275" y="70" />
+        <di:waypoint x="350" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_big_di" bpmnElement="f_big">
+        <di:waypoint x="400" y="70" />
+        <di:waypoint x="475" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_small_di" bpmnElement="f_small">
+        <di:waypoint x="375" y="95" />
+        <di:waypoint x="375" y="210" />
+        <di:waypoint x="475" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s3_di" bpmnElement="s3">
+        <di:waypoint x="575" y="70" />
+        <di:waypoint x="650" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s5_di" bpmnElement="s5">
+        <di:waypoint x="700" y="70" />
+        <di:waypoint x="775" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s6_di" bpmnElement="s6">
+        <di:waypoint x="875" y="70" />
+        <di:waypoint x="957" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s4_di" bpmnElement="s4">
+        <di:waypoint x="575" y="210" />
+        <di:waypoint x="675" y="210" />
+        <di:waypoint x="675" y="95" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

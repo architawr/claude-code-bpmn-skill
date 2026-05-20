@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_order" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_order" isExecutable="false">
+    <bpmn:startEvent id="Start" name="Order received">
+      <bpmn:outgoing>o1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="CheckStock" name="Check stock">
+      <bpmn:incoming>o1</bpmn:incoming>
+      <bpmn:outgoing>o2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Ship" name="Ship order">
+      <bpmn:incoming>o2</bpmn:incoming>
+      <bpmn:outgoing>o3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End" name="Order shipped">
+      <bpmn:incoming>o3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="o1" sourceRef="Start" targetRef="CheckStock" />
+    <bpmn:sequenceFlow id="o2" sourceRef="CheckStock" targetRef="Ship" />
+    <bpmn:sequenceFlow id="o3" sourceRef="Ship" targetRef="End" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Process_order">
+    <bpmndi:BPMNPlane id="BPMNPlane_Process_order" bpmnElement="Process_order">
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="57" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CheckStock_di" bpmnElement="CheckStock">
+        <dc:Bounds x="175" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Ship_di" bpmnElement="Ship">
+        <dc:Bounds x="325" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_di" bpmnElement="End">
+        <dc:Bounds x="507" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="o1_di" bpmnElement="o1">
+        <di:waypoint x="93" y="70" />
+        <di:waypoint x="175" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="o2_di" bpmnElement="o2">
+        <di:waypoint x="275" y="70" />
+        <di:waypoint x="325" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="o3_di" bpmnElement="o3">
+        <di:waypoint x="425" y="70" />
+        <di:waypoint x="507" y="70" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

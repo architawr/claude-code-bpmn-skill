@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_return" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_return" isExecutable="false">
+    <bpmn:startEvent id="Start" name="Return requested">
+      <bpmn:outgoing>r1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Inspect" name="Inspect item">
+      <bpmn:incoming>r1</bpmn:incoming>
+      <bpmn:outgoing>r2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw" name="Item intact?" gatewayDirection="Diverging">
+      <bpmn:incoming>r2</bpmn:incoming>
+      <bpmn:outgoing>r_yes</bpmn:outgoing>
+      <bpmn:outgoing>r_no</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Refund" name="Issue refund">
+      <bpmn:incoming>r_yes</bpmn:incoming>
+      <bpmn:outgoing>r3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Reject" name="Reject return">
+      <bpmn:incoming>r_no</bpmn:incoming>
+      <bpmn:outgoing>r4</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:boundaryEvent id="Bnd" name="7 days" attachedToRef="Inspect">
+      <bpmn:outgoing>r5</bpmn:outgoing>
+      <bpmn:timerEventDefinition />
+    </bpmn:boundaryEvent>
+    <bpmn:userTask id="Escalate" name="Escalate to support lead">
+      <bpmn:incoming>r5</bpmn:incoming>
+      <bpmn:outgoing>r6</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="End_refunded" name="Money refunded">
+      <bpmn:incoming>r3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_rejected" name="Return rejected">
+      <bpmn:incoming>r4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_escalated" name="Escalated">
+      <bpmn:incoming>r6</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="r1" sourceRef="Start" targetRef="Inspect" />
+    <bpmn:sequenceFlow id="r2" sourceRef="Inspect" targetRef="Gw" />
+    <bpmn:sequenceFlow id="r_yes" name="yes" sourceRef="Gw" targetRef="Refund">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${intact == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="r_no" name="no" sourceRef="Gw" targetRef="Reject" />
+    <bpmn:sequenceFlow id="r3" sourceRef="Refund" targetRef="End_refunded" />
+    <bpmn:sequenceFlow id="r4" sourceRef="Reject" targetRef="End_rejected" />
+    <bpmn:sequenceFlow id="r5" sourceRef="Bnd" targetRef="Escalate" />
+    <bpmn:sequenceFlow id="r6" sourceRef="Escalate" targetRef="End_escalated" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Process_return">
+    <bpmndi:BPMNPlane id="BPMNPlane_Process_return" bpmnElement="Process_return">
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="57" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Inspect_di" bpmnElement="Inspect">
+        <dc:Bounds x="175" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Bnd_di" bpmnElement="Bnd">
+        <dc:Bounds x="207" y="92" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_di" bpmnElement="Gw" isMarkerVisible="true">
+        <dc:Bounds x="500" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Refund_di" bpmnElement="Refund">
+        <dc:Bounds x="625" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_refunded_di" bpmnElement="End_refunded">
+        <dc:Bounds x="807" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Escalate_di" bpmnElement="Escalate">
+        <dc:Bounds x="325" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_escalated_di" bpmnElement="End_escalated">
+        <dc:Bounds x="507" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Reject_di" bpmnElement="Reject">
+        <dc:Bounds x="625" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_rejected_di" bpmnElement="End_rejected">
+        <dc:Bounds x="807" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="r1_di" bpmnElement="r1">
+        <di:waypoint x="93" y="70" />
+        <di:waypoint x="175" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="r2_di" bpmnElement="r2">
+        <di:waypoint x="275" y="70" />
+        <di:waypoint x="500" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="r5_di" bpmnElement="r5">
+        <di:waypoint x="225" y="128" />
+        <di:waypoint x="225" y="210" />
+        <di:waypoint x="325" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="r_yes_di" bpmnElement="r_yes">
+        <di:waypoint x="550" y="70" />
+        <di:waypoint x="625" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="r_no_di" bpmnElement="r_no">
+        <di:waypoint x="550" y="70" />
+        <di:waypoint x="600" y="70" />
+        <di:waypoint x="600" y="140" />
+        <di:waypoint x="600" y="140" />
+        <di:waypoint x="600" y="210" />
+        <di:waypoint x="625" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="r3_di" bpmnElement="r3">
+        <di:waypoint x="725" y="70" />
+        <di:waypoint x="807" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="r6_di" bpmnElement="r6">
+        <di:waypoint x="425" y="210" />
+        <di:waypoint x="507" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="r4_di" bpmnElement="r4">
+        <di:waypoint x="725" y="210" />
+        <di:waypoint x="807" y="210" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

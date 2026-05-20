@@ -1,0 +1,66 @@
+{
+  "skill_name": "bpmn",
+  "evals": [
+    {
+      "id": 0,
+      "name": "read-explain-refund",
+      "prompt": "Вот файл процесса возврата товара: return.bpmn. Объясни простыми словами, что в нем происходит: основной ход процесса, где принимаются решения и что будет, если товар не пройдет проверку или если проверка затянется.",
+      "expected_output": "Plain-language explanation in Russian covering: trigger (return requested), happy path (inspect -> refund), the decision (item intact? yes->refund, no->reject), and the timeout/escalation exception. Should read from summarize, not raw DI.",
+      "files": ["files/return.bpmn"],
+      "assertions": [
+        "Names the process trigger (return/refund requested)",
+        "Describes the happy path: inspect item, then issue refund",
+        "States the decision 'Item intact?' with both outcomes (refund if intact, reject if not)",
+        "Explains the 7-day timeout that leads to escalation",
+        "Mentions all three end states: refunded, rejected, escalated",
+        "Plain-language Russian prose, not a raw XML/DI dump"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "create-vacation-approval",
+      "prompt": "Сделай BPMN-схему процесса согласования заявки на отпуск: сотрудник подает заявку, руководитель одобряет или отклоняет. Если одобрено - HR регистрирует отпуск и сотрудник получает уведомление об одобрении. Если отклонено - сотрудник получает уведомление об отказе. Сохрани в vacation.bpmn.",
+      "expected_output": "Valid BPMN 2.0 XML at vacation.bpmn with start event, approval task, exclusive gateway, approve/reject branches with conditions, HR registration + notify tasks, two distinct end events, complete auto-generated DI. Passes validate.",
+      "files": [],
+      "assertions": [
+        "vacation.bpmn exists and parses as well-formed BPMN 2.0 (bpmn-moddle, no errors)",
+        "Has one start event and at least two end events (approved and rejected outcomes)",
+        "Contains an exclusive gateway for the approval decision",
+        "Includes the key activities: submit request, manager approval, HR registration, employee notification(s)",
+        "Approve/reject branches are distinguished by conditions or named sequence flows",
+        "Every flow node and sequence flow has diagram layout (BPMNShape/BPMNEdge present; passes validate)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "edit-add-payment-check",
+      "prompt": "В файле order.bpmn после шага 'Check stock' добавь проверку оплаты: если оплата прошла - продолжаем к 'Ship order'; если не прошла - заканчиваем новым концом 'Payment failed'. Перелейаудь схему и убедись, что она валидна.",
+      "expected_output": "order.bpmn updated with an exclusive gateway after Check stock, paid/not-paid branches with conditions, a new 'Payment failed' end event, existing ship path preserved, clean regenerated DI, validate passes.",
+      "files": ["files/order.bpmn"],
+      "assertions": [
+        "Original flow preserved: start (Order received), Check stock, Ship order, and the 'Order shipped' end event are all still present",
+        "An exclusive gateway is added after Check stock for the payment decision (Check stock flows into the gateway, not directly to Ship)",
+        "A new end event labeled 'Payment failed' exists on the not-paid branch",
+        "Paid branch leads to Ship order; not-paid branch leads to Payment failed; branches use conditions or a default",
+        "Diagram re-laid-out: every flow node and sequence flow has DI (validate passes; shapes + edges complete)",
+        "File parses as valid BPMN 2.0"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "create-order-fulfillment",
+      "prompt": "Смоделируй BPMN-схему обработки интернет-заказа и сохрани в order-fulfillment.bpmn: старт (заказ оформлен); параллельно резервирование товара и проверка оплаты, затем слияние; развилка оплата прошла? (нет -> Заказ отменен); упаковка отдельным под-процессом «Упаковка» (укомплектовать, взвесить, наклеить этикетку), затем отгрузка (-> Заказ отгружен); граничный таймер 1 день на резервировании -> эскалация менеджеру склада (-> Эскалировано).",
+      "expected_output": "Complex valid BPMN 2.0 (15+ nodes): parallel fork/join, exclusive payment gateway with cancel end, packaging sub-process, boundary timer + escalation, 3 distinct end events, complete clean DI with no overlapping shapes.",
+      "files": [],
+      "assertions": [
+        "order-fulfillment.bpmn parses as well-formed BPMN 2.0",
+        "Has a parallel gateway fork and join around the concurrent reserve-stock and check-payment branches",
+        "Has an exclusive gateway for the payment decision with a cancel branch ('Заказ отменен' end)",
+        "Includes a packaging sub-process ('Упаковка') with inner steps",
+        "Boundary timer on the reserve-stock task leads to an escalation end ('Эскалировано')",
+        "Three or more distinct end states (отгружен, отменен, эскалировано)",
+        "Clean complete layout: every node/flow has DI AND zero overlapping node shapes (overlaps == 0)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+[
+  { "query": "у нас в репо лежит hiring-approval.bpmn, проведи меня по нему — что происходит, когда кандидата отклоняют? я не могу разобраться в шлюзах", "should_trigger": true },
+  { "query": "turn this into a proper diagram: customer submits a ticket, support triages it, if it's a bug it goes to engineering, otherwise support answers directly, then we close it. save it as support-flow.bpmn", "should_trigger": true },
+  { "query": "order-process.bpmn где-то после шага оплаты намертво виснет в Camunda, можешь найти почему", "should_trigger": true },
+  { "query": "add a manager-approval step before 'Issue refund' in refund.bpmn, with a separate branch for amounts over 5000", "should_trigger": true },
+  { "query": "нужно в нашем onboarding-процессе повесить таймер-эскалацию на 2 дня на задачу 'Provision laptop', файл onboarding.bpmn (zeebe)", "should_trigger": true },
+  { "query": "распиши наш процесс согласования счетов как bpmn: финансы проверяют, свыше 10к нужна виза CFO, потом либо оплата, либо возврат на доработку", "should_trigger": true },
+  { "query": "посмотри claims-handling.bpmn и скажи, правильно ли там расставлены параллельные шлюзы — что-то не так со слиянием", "should_trigger": true },
+  { "query": "here's a description of our returns workflow, convert it to BPMN 2.0 xml I can open in the Camunda Modeler: ...", "should_trigger": true },
+  { "query": "нужна схема со swimlane: склад комплектует заказ, потом доставка отгружает, потом бухгалтерия выставляет счет — это три разные команды", "should_trigger": true },
+  { "query": "мы выгрузили .bpmn из Signavio, почисти его и объясни ветки обработки исключений", "should_trigger": true },
+
+  { "query": "сгенерируй sequence diagram рукопожатия авторизации между клиентом и OAuth-сервером", "should_trigger": false },
+  { "query": "draw an ER diagram for these three tables: users, orders, order_items", "should_trigger": false },
+  { "query": "сделай mermaid-флоучарт стадий нашего CI пайплайна для README", "should_trigger": false },
+  { "query": "наш процесс деплоя падает на шаге миграции, помоги отладить bash-скрипт deploy.sh", "should_trigger": false },
+  { "query": "model the state transitions for an order as a state machine: pending -> paid -> shipped -> delivered", "should_trigger": false },
+  { "query": "напиши SQL, чтобы найти все заказы, застрявшие в статусе 'processing' дольше 24 часов", "should_trigger": false },
+  { "query": "объясни концептуально, как спека BPMN определяет семантику токенов для inclusive-шлюзов", "should_trigger": false },
+  { "query": "set up a GitHub Actions workflow that runs our tests on every PR", "should_trigger": false },
+  { "query": "нужно нарисовать орг-структуру новой продуктовой команды", "should_trigger": false },
+  { "query": "сделай gantt-таймлайн по майлстоунам проекта на Q3", "should_trigger": false }
+]
