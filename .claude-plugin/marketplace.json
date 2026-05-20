@@ -1,0 +1,14 @@
+{
+  "name": "bpmn-tools",
+  "owner": {
+    "name": "Artur Karapetyan"
+  },
+  "plugins": [
+    {
+      "name": "bpmn",
+      "source": "./",
+      "description": "Read, explain, create, and edit BPMN 2.0 process diagrams with clean auto-generated layout, validation, and control-flow linting.",
+      "version": "1.0.0"
+    }
+  ]
+}

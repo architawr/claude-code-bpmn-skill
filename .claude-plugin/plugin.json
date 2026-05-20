@@ -1,0 +1,12 @@
+{
+  "name": "bpmn",
+  "description": "Read, explain, create, and edit BPMN 2.0 process diagrams (.bpmn): plain-language summaries, clean auto-generated layout, structural validation, and control-flow linting (deadlocks, double execution, stuck tokens).",
+  "version": "1.0.0",
+  "author": {
+    "name": "Artur Karapetyan"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/architawr/claude-code-bpmn-skill",
+  "repository": "https://github.com/architawr/claude-code-bpmn-skill",
+  "keywords": ["bpmn", "bpmn2", "process", "workflow", "diagram", "camunda", "bpmn.io", "modeling"]
+}
