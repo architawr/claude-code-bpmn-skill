@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_hiring" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Hiring" isExecutable="false">
+    <bpmn:startEvent id="Start" name="Vacancy opened">
+      <bpmn:outgoing>f1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Screen" name="Screen CVs">
+      <bpmn:incoming>f1</bpmn:incoming>
+      <bpmn:outgoing>f2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:subProcess id="Interview" name="Interview loop">
+      <bpmn:incoming>f2</bpmn:incoming>
+      <bpmn:outgoing>f3</bpmn:outgoing>
+      <bpmn:startEvent id="iStart">
+        <bpmn:outgoing>if1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:task id="Phone" name="Phone screen">
+        <bpmn:incoming>if1</bpmn:incoming>
+        <bpmn:outgoing>if2</bpmn:outgoing>
+      </bpmn:task>
+      <bpmn:task id="Onsite" name="Onsite interview">
+        <bpmn:incoming>if2</bpmn:incoming>
+        <bpmn:outgoing>if3</bpmn:outgoing>
+      </bpmn:task>
+      <bpmn:endEvent id="iEnd">
+        <bpmn:incoming>if3</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="if1" sourceRef="iStart" targetRef="Phone" />
+      <bpmn:sequenceFlow id="if2" sourceRef="Phone" targetRef="Onsite" />
+      <bpmn:sequenceFlow id="if3" sourceRef="Onsite" targetRef="iEnd" />
+    </bpmn:subProcess>
+    <bpmn:endEvent id="End" name="Candidate hired">
+      <bpmn:incoming>f3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="f1" sourceRef="Start" targetRef="Screen" />
+    <bpmn:sequenceFlow id="f2" sourceRef="Screen" targetRef="Interview" />
+    <bpmn:sequenceFlow id="f3" sourceRef="Interview" targetRef="End" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Hiring">
+    <bpmndi:BPMNPlane id="BPMNPlane_Hiring" bpmnElement="Hiring">
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="157" y="152" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Screen_di" bpmnElement="Screen">
+        <dc:Bounds x="250" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Interview_di" bpmnElement="Interview">
+        <dc:Bounds x="410" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_di" bpmnElement="End">
+        <dc:Bounds x="572" y="152" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="193" y="170" />
+        <di:waypoint x="250" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="350" y="170" />
+        <di:waypoint x="410" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="510" y="170" />
+        <di:waypoint x="572" y="170" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Interview">
+    <bpmndi:BPMNPlane id="BPMNPlane_Interview" bpmnElement="Interview">
+      <bpmndi:BPMNShape id="iStart_di" bpmnElement="iStart">
+        <dc:Bounds x="157" y="152" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Phone_di" bpmnElement="Phone">
+        <dc:Bounds x="250" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Onsite_di" bpmnElement="Onsite">
+        <dc:Bounds x="410" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="iEnd_di" bpmnElement="iEnd">
+        <dc:Bounds x="572" y="152" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="if1_di" bpmnElement="if1">
+        <di:waypoint x="193" y="170" />
+        <di:waypoint x="250" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="if2_di" bpmnElement="if2">
+        <di:waypoint x="350" y="170" />
+        <di:waypoint x="410" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="if3_di" bpmnElement="if3">
+        <di:waypoint x="510" y="170" />
+        <di:waypoint x="572" y="170" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

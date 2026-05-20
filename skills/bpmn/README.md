@@ -28,23 +28,34 @@ BPMN XML) and [`bpmn-auto-layout`](https://github.com/bpmn-io/bpmn-auto-layout)
 ## Commands
 
 ```bash
-node scripts/bpmn-tool.mjs summarize <file.bpmn> [--json]   # structured outline, for explaining
-node scripts/bpmn-tool.mjs layout    <in.bpmn> [out.bpmn]   # regenerate clean DI (layout)
-node scripts/bpmn-tool.mjs validate  <file.bpmn>            # parse + missing-shape + overlap checks
-node scripts/bpmn-tool.mjs lint      <file.bpmn>            # control-flow logic bugs
+node scripts/bpmn-tool.mjs summarize <file.bpmn> [--json]            # structured outline, for explaining
+node scripts/bpmn-tool.mjs layout    <in.bpmn> [out.bpmn] [--rebuild] # sync diagram to semantics (safe by default)
+node scripts/bpmn-tool.mjs validate  <file.bpmn>                     # parse + missing-shape + per-plane overlap
+node scripts/bpmn-tool.mjs lint      <file.bpmn>                     # control-flow logic bugs
+node scripts/bpmn-tool.mjs diff      <a.bpmn> <b.bpmn>               # semantic + structural diff
+node scripts/bpmn-tool.mjs find      <file.bpmn> <term>             # locate elements by name/type
 ```
 
 - **summarize** — pools/lanes, events, activities, gateways (with direction),
   boundary events, and every sequence flow as `source -> target [condition]`.
-- **layout** — strips old DI and regenerates a tidy left-to-right diagram;
-  collapses sub-processes to clean boxes. You author *semantics only* and let
-  this produce the picture — never hand-write coordinates.
-- **validate** — well-formed XML, every flow node/edge has a shape, no
-  overlapping shapes.
+- **layout** — **non-destructive by default**: on a file that already has a
+  diagram it preserves the layout (hand-tuned positions, Camunda multi-diagram
+  sub-process pages) and only prunes shapes for deleted elements and places
+  shapes for new ones. With no DI it generates a fresh layout. `--rebuild` forces
+  a full re-layout from scratch. Covers collaborations (all pools + message
+  flows), swimlanes, sub-process drill-down pages, and data objects/annotations.
+  You author *semantics only* — never hand-write coordinates.
+- **validate** — well-formed XML, every flow node/edge has a shape, no overlapping
+  shapes (checked per diagram plane).
 - **lint** — catches bugs that are valid XML but wrong behaviour: deadlock
   (parallel join after an exclusive split), double execution (exclusive join
-  after a parallel split), and stuck-token gateways (all branches conditioned,
-  no default).
+  after a parallel split), stuck-token gateways (all branches conditioned, no
+  default), unreachable nodes, dead ends, and a missing start/end event.
+- **diff** — what changed between two versions: elements added/removed/renamed/
+  retyped and sequence flows rewired.
+- **find** — list flow elements whose name or type contains a term.
+
+Run the test suite with `npm test`.
 
 ## How the skill is meant to be used
 
@@ -58,10 +69,12 @@ The short version:
 
 ## Known limits (auto-layout)
 
-`bpmn-auto-layout` lays out single-pool processes well. It does **not** fully
-lay out: collaborations (only the first pool), expanded sub-processes (rendered
-collapsed by design), groups, text annotations, associations, message flows, and
-data objects. See `references/bpmn-reference.md` for workarounds.
+Layout covers single-pool flows, collaborations (all pools + message flows),
+swimlanes, sub-process drill-down pages, and data objects/annotations/
+associations. It does **not** auto-place **groups** (a group is a purely visual
+rectangle with no membership in the model). Auto-placement of pools, lanes, data
+objects, and annotations is approximate — valid and clean, but a user may want to
+nudge spacing in a modeler. See `references/bpmn-reference.md`.
 
 ## Layout
 
@@ -70,7 +83,10 @@ bpmn/
 ├── SKILL.md                      # skill instructions (workflow, conventions, limits)
 ├── README.md                     # this file
 ├── package.json                  # bpmn-moddle + bpmn-auto-layout
-├── scripts/bpmn-tool.mjs         # summarize / layout / validate / lint
+├── scripts/
+│   ├── bpmn-tool.mjs             # thin CLI: summarize / layout / validate / lint / diff / find
+│   └── lib.mjs                   # all the mechanics (testable functions)
+├── test/                         # node --test suite + fixtures (npm test)
 └── references/bpmn-reference.md   # element cheat-sheet, recipes, pitfalls
 ```
 

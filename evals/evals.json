@@ -35,14 +35,14 @@
       "id": 2,
       "name": "edit-add-payment-check",
       "prompt": "В файле order.bpmn после шага 'Check stock' добавь проверку оплаты: если оплата прошла - продолжаем к 'Ship order'; если не прошла - заканчиваем новым концом 'Payment failed'. Перелейаудь схему и убедись, что она валидна.",
-      "expected_output": "order.bpmn updated with an exclusive gateway after Check stock, paid/not-paid branches with conditions, a new 'Payment failed' end event, existing ship path preserved, clean regenerated DI, validate passes.",
+      "expected_output": "order.bpmn updated with an exclusive gateway after Check stock, paid/not-paid branches with conditions, a new 'Payment failed' end event, existing ship path preserved. layout (default) preserves the existing DI and only places the new gateway/end/flows; validate passes.",
       "files": ["files/order.bpmn"],
       "assertions": [
         "Original flow preserved: start (Order received), Check stock, Ship order, and the 'Order shipped' end event are all still present",
         "An exclusive gateway is added after Check stock for the payment decision (Check stock flows into the gateway, not directly to Ship)",
         "A new end event labeled 'Payment failed' exists on the not-paid branch",
         "Paid branch leads to Ship order; not-paid branch leads to Payment failed; branches use conditions or a default",
-        "Diagram re-laid-out: every flow node and sequence flow has DI (validate passes; shapes + edges complete)",
+        "Existing nodes keep their original positions (default layout preserves DI, not a from-scratch rebuild) and the new nodes/flows all get shapes/edges (validate passes)",
         "File parses as valid BPMN 2.0"
       ]
     },
@@ -60,6 +60,21 @@
         "Boundary timer on the reserve-stock task leads to an escalation end ('Эскалировано')",
         "Three or more distinct end states (отгружен, отменен, эскалировано)",
         "Clean complete layout: every node/flow has DI AND zero overlapping node shapes (overlaps == 0)"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "edit-preserve-subprocess",
+      "prompt": "В hiring.bpmn (экспорт из Camunda) внутри подпроцесса 'Interview loop' после 'Onsite interview' добавь задачу 'Reference check', затем перелэйаудь и провалидируй. Содержимое подпроцесса должно остаться на месте — оно не должно опустеть.",
+      "expected_output": "hiring.bpmn updated with a new 'Reference check' task inside the Interview loop sub-process after 'Onsite interview'. Default layout preserves the existing multi-diagram DI (the Interview drill-down page keeps Phone screen + Onsite interview and gains Reference check); the sub-process is NOT collapsed/emptied. validate passes.",
+      "files": ["files/hiring.bpmn"],
+      "assertions": [
+        "The Interview loop sub-process still has its own drill-down BPMNDiagram plane (bpmnElement = Interview), not an empty box",
+        "Inner steps preserved: Phone screen and Onsite interview keep their shapes on the Interview plane",
+        "New 'Reference check' task added inside the sub-process, between Onsite interview and the inner end, and given a shape on the Interview plane",
+        "Top-level layout preserved: Screen CVs and the Interview box keep their original positions (used default layout, not --rebuild)",
+        "validate passes (every flow element has a shape; no per-plane overlaps); file parses as valid BPMN 2.0",
+        "Used the default non-destructive layout — did NOT regenerate the whole diagram from scratch"
       ]
     }
   ]

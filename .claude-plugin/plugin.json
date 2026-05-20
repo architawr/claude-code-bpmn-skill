@@ -1,7 +1,7 @@
 {
   "name": "bpmn",
-  "description": "Read, explain, create, and edit BPMN 2.0 process diagrams (.bpmn): plain-language summaries, clean auto-generated layout, structural validation, and control-flow linting (deadlocks, double execution, stuck tokens).",
-  "version": "1.1.0",
+  "description": "Read, explain, create, and edit BPMN 2.0 process diagrams (.bpmn): plain-language summaries, non-destructive layout that preserves Camunda multi-diagram sub-process pages, full coverage (collaborations, swimlanes, sub-processes, data objects), structural validation, control-flow linting (deadlocks, unreachable nodes, dead ends), plus diff and find.",
+  "version": "1.2.0",
   "author": {
     "name": "Artur Karapetyan"
   },
