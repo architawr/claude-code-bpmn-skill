@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:process id="Order" isExecutable="false">
+    <bpmn:startEvent id="S" name="Order received"/>
+    <bpmn:task id="Tcheck" name="Check stock"/>
+    <bpmn:task id="Tgift" name="Gift wrap"/>
+    <bpmn:task id="Tship" name="Ship"/>
+    <bpmn:endEvent id="E" name="Shipped"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="S" targetRef="Tcheck"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="Tcheck" targetRef="Tgift"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="Tgift" targetRef="Tship"/>
+    <bpmn:sequenceFlow id="f4" sourceRef="Tship" targetRef="E"/>
+  </bpmn:process>
+</bpmn:definitions>

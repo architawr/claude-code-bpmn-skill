@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:process id="DocHandling" isExecutable="false">
+    <bpmn:startEvent id="S" name="Received"/>
+    <bpmn:task id="Triage" name="Triage"/>
+    <bpmn:task id="Process" name="Process"/>
+    <bpmn:task id="Archive" name="Archive"/>
+    <bpmn:task id="Legacy" name="Legacy import"/>
+    <bpmn:endEvent id="E" name="Done"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="S" targetRef="Triage"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="Triage" targetRef="Process"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="Triage" targetRef="Archive"/>
+    <bpmn:sequenceFlow id="f4" sourceRef="Process" targetRef="E"/>
+    <bpmn:sequenceFlow id="f5" sourceRef="Legacy" targetRef="E"/>
+  </bpmn:process>
+</bpmn:definitions>

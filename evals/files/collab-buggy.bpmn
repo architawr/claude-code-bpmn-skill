@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:collaboration id="C">
+    <bpmn:participant id="PCust" name="Customer" processRef="Cust"/>
+    <bpmn:participant id="PSup" name="Support" processRef="Sup"/>
+    <bpmn:messageFlow id="mfInternal" sourceRef="Ask" targetRef="Wait"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Cust">
+    <bpmn:startEvent id="Sc" name="Issue"/>
+    <bpmn:task id="Ask" name="Ask question"/>
+    <bpmn:task id="Wait" name="Wait for answer"/>
+    <bpmn:endEvent id="Ec" name="Resolved"/>
+    <bpmn:sequenceFlow id="c1" sourceRef="Sc" targetRef="Ask"/>
+    <bpmn:sequenceFlow id="c2" sourceRef="Ask" targetRef="Wait"/>
+    <bpmn:sequenceFlow id="c3" sourceRef="Wait" targetRef="Ec"/>
+  </bpmn:process>
+  <bpmn:process id="Sup">
+    <bpmn:startEvent id="Ss" name="Ticket"/>
+    <bpmn:exclusiveGateway id="G" name="Urgent?"/>
+    <bpmn:task id="Answer" name="Answer"/>
+    <bpmn:endEvent id="Es" name="Closed"/>
+    <bpmn:endEvent id="Es2" name="Timed out"/>
+    <bpmn:boundaryEvent id="B" name="SLA" attachedToRef="G"><bpmn:timerEventDefinition/></bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="s1" sourceRef="Ss" targetRef="G"/>
+    <bpmn:sequenceFlow id="s2" sourceRef="G" targetRef="Answer"/>
+    <bpmn:sequenceFlow id="s3" sourceRef="Answer" targetRef="Es"/>
+    <bpmn:sequenceFlow id="s4" sourceRef="B" targetRef="Es2"/>
+  </bpmn:process>
+</bpmn:definitions>

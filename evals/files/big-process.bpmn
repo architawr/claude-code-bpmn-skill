@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="D" targetNamespace="x">
+  <bpmn:process id="Onboarding" isExecutable="false">
+    <bpmn:startEvent id="S" name="Candidate accepted"/>
+    <bpmn:task id="Verify" name="Verify identity"/>
+    <bpmn:task id="Sign" name="Sign contract"/>
+    <bpmn:exclusiveGateway id="G1" name="Remote?" default="fdesk"/>
+    <bpmn:task id="Laptop" name="Ship laptop"/>
+    <bpmn:task id="Desk" name="Assign desk"/>
+    <bpmn:exclusiveGateway id="G2" name=""/>
+    <bpmn:task id="Accounts" name="Create accounts"/>
+    <bpmn:task id="Orient" name="Schedule orientation"/>
+    <bpmn:task id="Mentor" name="Assign mentor"/>
+    <bpmn:endEvent id="E" name="Onboarded"/>
+    <bpmn:sequenceFlow id="a1" sourceRef="S" targetRef="Verify"/>
+    <bpmn:sequenceFlow id="a2" sourceRef="Verify" targetRef="Sign"/>
+    <bpmn:sequenceFlow id="a3" sourceRef="Sign" targetRef="G1"/>
+    <bpmn:sequenceFlow id="flap" name="remote" sourceRef="G1" targetRef="Laptop"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${remote}</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="fdesk" name="on-site" sourceRef="G1" targetRef="Desk"/>
+    <bpmn:sequenceFlow id="a4" sourceRef="Laptop" targetRef="G2"/>
+    <bpmn:sequenceFlow id="a5" sourceRef="Desk" targetRef="G2"/>
+    <bpmn:sequenceFlow id="a6" sourceRef="G2" targetRef="Accounts"/>
+    <bpmn:sequenceFlow id="a7" sourceRef="Accounts" targetRef="Orient"/>
+    <bpmn:sequenceFlow id="a8" sourceRef="Orient" targetRef="Mentor"/>
+    <bpmn:sequenceFlow id="a9" sourceRef="Mentor" targetRef="E"/>
+  </bpmn:process>
+</bpmn:definitions>

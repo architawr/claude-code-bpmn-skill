@@ -3,6 +3,7 @@
   "evals": [
     {
       "id": 0,
+      "category": "read",
       "name": "read-explain-refund",
       "prompt": "Вот файл процесса возврата товара: return.bpmn. Объясни простыми словами, что в нем происходит: основной ход процесса, где принимаются решения и что будет, если товар не пройдет проверку или если проверка затянется.",
       "expected_output": "Plain-language explanation in Russian covering: trigger (return requested), happy path (inspect -> refund), the decision (item intact? yes->refund, no->reject), and the timeout/escalation exception. Should read from summarize, not raw DI.",
@@ -18,6 +19,7 @@
     },
     {
       "id": 1,
+      "category": "create",
       "name": "create-vacation-approval",
       "prompt": "Сделай BPMN-схему процесса согласования заявки на отпуск: сотрудник подает заявку, руководитель одобряет или отклоняет. Если одобрено - HR регистрирует отпуск и сотрудник получает уведомление об одобрении. Если отклонено - сотрудник получает уведомление об отказе. Сохрани в vacation.bpmn.",
       "expected_output": "Valid BPMN 2.0 XML at vacation.bpmn with start event, approval task, exclusive gateway, approve/reject branches with conditions, HR registration + notify tasks, two distinct end events, complete auto-generated DI. Passes validate.",
@@ -33,6 +35,7 @@
     },
     {
       "id": 2,
+      "category": "edit",
       "name": "edit-add-payment-check",
       "prompt": "В файле order.bpmn после шага 'Check stock' добавь проверку оплаты: если оплата прошла - продолжаем к 'Ship order'; если не прошла - заканчиваем новым концом 'Payment failed'. Перелейаудь схему и убедись, что она валидна.",
       "expected_output": "order.bpmn updated with an exclusive gateway after Check stock, paid/not-paid branches with conditions, a new 'Payment failed' end event, existing ship path preserved. layout (default) preserves the existing DI and only places the new gateway/end/flows; validate passes.",
@@ -48,6 +51,7 @@
     },
     {
       "id": 3,
+      "category": "create",
       "name": "create-order-fulfillment",
       "prompt": "Смоделируй BPMN-схему обработки интернет-заказа и сохрани в order-fulfillment.bpmn: старт (заказ оформлен); параллельно резервирование товара и проверка оплаты, затем слияние; развилка оплата прошла? (нет -> Заказ отменен); упаковка отдельным под-процессом «Упаковка» (укомплектовать, взвесить, наклеить этикетку), затем отгрузка (-> Заказ отгружен); граничный таймер 1 день на резервировании -> эскалация менеджеру склада (-> Эскалировано).",
       "expected_output": "Complex valid BPMN 2.0 (15+ nodes): parallel fork/join, exclusive payment gateway with cancel end, packaging sub-process, boundary timer + escalation, 3 distinct end events, complete clean DI with no overlapping shapes.",
@@ -64,6 +68,7 @@
     },
     {
       "id": 4,
+      "category": "edit",
       "name": "edit-preserve-subprocess",
       "prompt": "В hiring.bpmn (экспорт из Camunda) внутри подпроцесса 'Interview loop' после 'Onsite interview' добавь задачу 'Reference check', затем перелэйаудь и провалидируй. Содержимое подпроцесса должно остаться на месте — оно не должно опустеть.",
       "expected_output": "hiring.bpmn updated with a new 'Reference check' task inside the Interview loop sub-process after 'Onsite interview'. Default layout preserves the existing multi-diagram DI (the Interview drill-down page keeps Phone screen + Onsite interview and gains Reference check); the sub-process is NOT collapsed/emptied. validate passes.",
@@ -75,6 +80,163 @@
         "Top-level layout preserved: Screen CVs and the Interview box keep their original positions (used default layout, not --rebuild)",
         "validate passes (every flow element has a shape; no per-plane overlaps); file parses as valid BPMN 2.0",
         "Used the default non-destructive layout — did NOT regenerate the whole diagram from scratch"
+      ]
+    },
+    {
+      "id": 5,
+      "category": "create",
+      "name": "create-collaboration",
+      "prompt": "Смоделируй взаимодействие двух участников и сохрани в support-collab.bpmn: Клиент создаёт обращение и отправляет его в Поддержку (сообщение), Поддержка обрабатывает обращение и отправляет ответ обратно Клиенту (сообщение). Два пула, обмен сообщениями между ними.",
+      "expected_output": "Valid BPMN 2.0 collaboration in support-collab.bpmn with two participants (pools), each with its own process, and message flows crossing between the pools. Both pools are laid out (every flow node has a shape) and stacked without overlapping; validate passes; lint reports no intra-pool message flow.",
+      "files": [],
+      "assertions": [
+        "support-collab.bpmn parses as valid BPMN 2.0 with a bpmn:collaboration and two participants (pools)",
+        "At least one message flow connects the two pools (cross-pool, not within one)",
+        "Both pools' processes are laid out: every flow node in both processes has a BPMNShape (validate passes)",
+        "Each pool has its own BPMNShape and the two pools do not overlap",
+        "lint reports no INTERNAL MESSAGE FLOW (message flows cross pools)"
+      ]
+    },
+    {
+      "id": 6,
+      "category": "create",
+      "name": "create-swimlanes",
+      "prompt": "Сделай схему с дорожками и сохрани в fulfilment-lanes.bpmn: три команды — Продажи (принять заказ), Склад (укомплектовать, упаковать), Доставка (отгрузить). Каждая задача в своей дорожке.",
+      "expected_output": "Valid BPMN 2.0 in fulfilment-lanes.bpmn with one process containing a laneSet of three lanes (Sales, Warehouse, Delivery); each task assigned to its lane via flowNodeRef; lane shapes drawn and nodes placed in their bands; validate passes; lint reports no unassigned node.",
+      "files": [],
+      "assertions": [
+        "fulfilment-lanes.bpmn parses as valid BPMN 2.0 with a laneSet containing three lanes",
+        "Every task is assigned to a lane via flowNodeRef (lint reports no UNASSIGNED NODE)",
+        "Lane shapes are drawn and each node sits within its lane's vertical band (validate passes)",
+        "Tasks named in business terms; one start event and at least one end event"
+      ]
+    },
+    {
+      "id": 7,
+      "category": "edit",
+      "name": "edit-rename-preserve",
+      "prompt": "В order.bpmn переименуй задачу 'Check stock' в 'Verify availability' и перелэйаудь. Существующая раскладка должна сохраниться.",
+      "expected_output": "order.bpmn with the task renamed (same element id) and the diagram otherwise untouched: default layout preserves every existing shape's position (no --rebuild). validate passes.",
+      "files": ["files/order.bpmn"],
+      "assertions": [
+        "The task formerly named 'Check stock' is now named 'Verify availability' (same element id)",
+        "Existing shapes keep their original x/y positions (default layout preserved the DI, not a from-scratch rebuild)",
+        "No flow elements were added or removed; validate passes",
+        "Used the default non-destructive layout, not --rebuild"
+      ]
+    },
+    {
+      "id": 8,
+      "category": "edit",
+      "name": "edit-insert-step",
+      "prompt": "В order.bpmn между 'Check stock' и 'Ship order' добавь шаг 'Pack order' и перелэйаудь.",
+      "expected_output": "order.bpmn with a new 'Pack order' task inserted on the path Check stock -> Pack order -> Ship order; existing nodes preserved; the new node placed onto the flow with a shape and edges; validate passes.",
+      "files": ["files/order.bpmn"],
+      "assertions": [
+        "A new task 'Pack order' exists between Check stock and Ship order (Check stock -> Pack order -> Ship order)",
+        "Original nodes preserved: Order received, Check stock, Ship order, and the existing end event",
+        "The new node has a shape and is connected with edges; validate passes",
+        "Existing layout preserved (default layout); the new node is fitted onto the flow, not the whole diagram rebuilt"
+      ]
+    },
+    {
+      "id": 9,
+      "category": "edit",
+      "name": "edit-delete-branch",
+      "prompt": "В return.bpmn убери ветку эскалации по таймауту: граничное событие-таймер, шаг 'Escalate to support lead' и его конец 'Escalated'. Затем перелэйаудь и провалидируй.",
+      "expected_output": "return.bpmn with the escalation branch removed from semantics (boundary timer, escalate task, escalated end, and their connecting flows) and the corresponding shapes/edges pruned from the diagram. The remaining process is unchanged and keeps its positions; validate passes with no parse warnings.",
+      "files": ["files/return.bpmn"],
+      "assertions": [
+        "The escalation branch is gone from semantics: the boundary timer event, the 'Escalate to support lead' task, and the 'Escalated' end event are removed",
+        "Their shapes and edges are pruned from the diagram (no dangling DI, no unresolved-reference parse warnings)",
+        "The rest of the process (inspect item, issue refund, reject, the 'Item intact?' decision) is unchanged and keeps its positions",
+        "validate passes; file parses as valid BPMN 2.0"
+      ]
+    },
+    {
+      "id": 10,
+      "category": "review",
+      "name": "review-deadlock",
+      "prompt": "approval-buggy.bpmn где-то намертво виснет в Camunda после развилки по сумме. Найди причину и предложи фикс.",
+      "expected_output": "Identifies, via lint, an AND-join that merges branches from an exclusive (XOR) split, explains why it deadlocks (the parallel join waits for a token that never arrives), and proposes making the join an exclusive/inclusive gateway matching the split.",
+      "files": ["files/approval-buggy.bpmn"],
+      "assertions": [
+        "Runs lint rather than only eyeballing the XML",
+        "Identifies the deadlock: a parallel (AND) join merging branches that split at an exclusive (XOR) gateway",
+        "Explains in plain language why it hangs (the AND-join waits forever for a token that never comes)",
+        "Proposes a concrete fix: make the join an exclusive/inclusive gateway matching the split"
+      ]
+    },
+    {
+      "id": 11,
+      "category": "review",
+      "name": "review-structure",
+      "prompt": "Отревьюй messy.bpmn — что не так со структурой процесса?",
+      "expected_output": "Via lint, reports the three structural problems and explains each: an unreachable node ('Legacy import'), a dead end ('Archive' with no outgoing flow), and an implicit split ('Triage' branching without a gateway).",
+      "files": ["files/messy.bpmn"],
+      "assertions": [
+        "Runs lint",
+        "Reports the unreachable node ('Legacy import' has no path from a start event)",
+        "Reports the dead end ('Archive' has no outgoing sequence flow)",
+        "Reports the implicit split ('Triage' has multiple outgoing flows but is not a gateway)",
+        "Explains each in plain language with a concrete fix"
+      ]
+    },
+    {
+      "id": 12,
+      "category": "review",
+      "name": "review-collaboration",
+      "prompt": "Проверь collab-buggy.bpmn на корректность взаимодействия пулов и граничных событий.",
+      "expected_output": "Via lint, flags the message flow that stays within one pool (should be a sequence flow) and the boundary event attached to a gateway (boundary events may only attach to activities); explains both with fixes.",
+      "files": ["files/collab-buggy.bpmn"],
+      "assertions": [
+        "Runs lint",
+        "Flags the message flow that connects two nodes within the same pool",
+        "Flags the boundary event attached to a gateway (must attach to a task/sub-process/call activity)",
+        "Explains both issues and proposes concrete fixes"
+      ]
+    },
+    {
+      "id": 13,
+      "category": "utility",
+      "name": "diff-as-is-to-be",
+      "prompt": "Сравни process-v1.bpmn (как есть) и process-v2.bpmn (как будет) и расскажи простыми словами, что изменилось.",
+      "expected_output": "Uses diff and summarizes the delta in business language: 'Charge card' added, 'Gift wrap' removed, 'Ship' renamed to 'Pack and ship', and the flow after Check stock rerouted (now to Charge card).",
+      "files": ["files/process-v1.bpmn", "files/process-v2.bpmn"],
+      "assertions": [
+        "Runs diff rather than comparing the XML by eye",
+        "Reports 'Charge card' was added",
+        "Reports 'Gift wrap' was removed",
+        "Reports 'Ship' was renamed to 'Pack and ship'",
+        "Reports the flow after Check stock was rerouted (now leads to Charge card)",
+        "Summarized in plain business language, not raw element ids"
+      ]
+    },
+    {
+      "id": 14,
+      "category": "utility",
+      "name": "find-locate",
+      "prompt": "В big-process.bpmn где находится шаг проверки личности и что идёт сразу после него?",
+      "expected_output": "Locates 'Verify identity' (via find or summarize, not by scrolling raw XML) and states its successor, 'Sign contract'.",
+      "files": ["files/big-process.bpmn"],
+      "assertions": [
+        "Locates 'Verify identity' using find or summarize (not by reading raw XML)",
+        "States what follows it: 'Sign contract'",
+        "Answer grounded in the model (correct successor)"
+      ]
+    },
+    {
+      "id": 15,
+      "category": "validate",
+      "name": "validate-fix",
+      "prompt": "Открой broken-di.bpmn, проверь его и почини, чтобы он нормально открывался в модельере.",
+      "expected_output": "Runs validate, finds the broken layout (overlapping shapes), regenerates the diagram with layout --rebuild (since the existing DI is broken), and re-validates clean. Semantics are unchanged.",
+      "files": ["files/broken-di.bpmn"],
+      "assertions": [
+        "Runs validate and identifies the broken layout (overlapping shapes)",
+        "Fixes it by regenerating the layout (layout --rebuild, because the existing DI is broken, not just incomplete)",
+        "Re-runs validate and confirms it passes (no overlaps, every flow element has a shape)",
+        "Semantics unchanged: same nodes and flows as before"
       ]
     }
   ]

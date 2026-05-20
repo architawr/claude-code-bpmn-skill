@@ -19,5 +19,17 @@
   { "query": "объясни концептуально, как спека BPMN определяет семантику токенов для inclusive-шлюзов", "should_trigger": false },
   { "query": "set up a GitHub Actions workflow that runs our tests on every PR", "should_trigger": false },
   { "query": "нужно нарисовать орг-структуру новой продуктовой команды", "should_trigger": false },
-  { "query": "сделай gantt-таймлайн по майлстоунам проекта на Q3", "should_trigger": false }
+  { "query": "сделай gantt-таймлайн по майлстоунам проекта на Q3", "should_trigger": false },
+
+  { "query": "сравни две версии нашего процесса согласования — process-v1.bpmn и process-v2.bpmn, что именно поменялось между as-is и to-be", "should_trigger": true },
+  { "query": "в большом onboarding.bpmn найди, где шаг проверки личности и что идёт сразу после него", "should_trigger": true },
+  { "query": "нарисуй взаимодействие клиента и банка с обменом сообщениями (два пула) и сохрани в payments.bpmn", "should_trigger": true },
+  { "query": "разнеси наш процесс выполнения заказа по дорожкам: продажи, склад, доставка", "should_trigger": true },
+  { "query": "в order.bpmn удали ветку отмены заказа и перелэйаудь, не сломав остальную раскладку", "should_trigger": true },
+  { "query": "проверь, нет ли в claims.bpmn недостижимых шагов, тупиков или висящих веток", "should_trigger": true },
+
+  { "query": "сравни два конфига config.old.json и config.new.json и покажи, что изменилось", "should_trigger": false },
+  { "query": "сделай git diff между ветками main и release и объясни изменения", "should_trigger": false },
+  { "query": "найди функцию parseOrder в нашем репозитории и покажи, кто её вызывает", "should_trigger": false },
+  { "query": "нарисуй sequence diagram обмена сообщениями между сервисами по WebSocket", "should_trigger": false }
 ]
