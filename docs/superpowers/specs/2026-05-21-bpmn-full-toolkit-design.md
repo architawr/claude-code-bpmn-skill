@@ -119,6 +119,24 @@ expanded and given a plane) is Phase 2.
 - Grading for the LLM evals stays `validate` + `lint` + fact checks via
   `bpmn-moddle`.
 
+## Quality round (v1.3, implemented)
+
+A follow-up pass for "maximally complete & high-quality" (engine specifics —
+Camunda/Zeebe, `isExecutable` — explicitly **out of scope**; the skill targets
+plain BPMN):
+
+- **Layout quality:** pretty-printed output (readable `.bpmn` diffs);
+  insert-between (a node added on a path lands on the line, downstream shifted
+  right); stale sequence-flow edges re-routed in resync while correct/hand-tuned
+  edges are left alone; orthogonal new edges; boundary events on the host edge;
+  collaboration pools equalized to one width.
+- **Deeper lint:** implicit split, misdirected start/end events, boundary on a
+  non-activity, node in no lane, message flow inside one pool.
+- **QA invariants:** deterministic generation; idempotent resync/collaboration
+  layout; real exported fixtures validate.
+
+Rendering/preview (SVG/Mermaid) considered and **declined** by the user.
+
 ## Files touched
 
 - `skills/bpmn/scripts/bpmn-tool.mjs` — main work
