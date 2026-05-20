@@ -10,8 +10,8 @@
     {
       "name": "bpmn",
       "source": "./",
-      "description": "Read, explain, create, and edit BPMN 2.0 process diagrams with clean auto-generated layout, validation, and control-flow linting.",
-      "version": "1.1.0"
+      "description": "Read, explain, create, and edit BPMN 2.0 process diagrams: non-destructive layout that preserves Camunda multi-diagram sub-process pages, full coverage (collaborations, swimlanes, sub-processes, data objects), validation, control-flow linting, plus diff and find.",
+      "version": "1.2.0"
     }
   ]
 }

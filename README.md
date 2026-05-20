@@ -12,13 +12,21 @@ regenerating layout, validating, and linting control flow.
 ## What it can do
 
 - **Explain** a `.bpmn`: happy path, decision points, exception/timeout handling.
-- **Create / edit** processes from a description, then auto-generate a clean
-  left-to-right layout (you never hand-write diagram coordinates).
-- **Validate**: well-formed XML, every node/edge has a shape, no overlaps.
+- **Create / edit** processes from a description (you never hand-write diagram
+  coordinates), with full layout coverage: collaborations (all pools + message
+  flows), swimlanes, sub-process drill-down pages, and data objects/annotations.
+- **Edit non-destructively**: layout is **safe by default** — on a file that
+  already has a diagram it preserves the layout (hand-tuned positions, Camunda
+  multi-diagram sub-process pages) and only prunes shapes for deleted elements
+  and places shapes for new ones. A full re-layout happens only with `--rebuild`.
+- **Validate**: well-formed XML, every node/edge has a shape, no overlaps
+  (checked per diagram plane).
 - **Lint control flow**: catches bugs that are valid XML but wrong behaviour —
   deadlock (parallel join after an exclusive split), double execution (exclusive
-  join after a parallel split), and stuck-token gateways (all branches
-  conditioned, no default).
+  join after a parallel split), stuck-token gateways (all branches conditioned,
+  no default), unreachable nodes, dead ends, and a missing start/end event.
+- **Compare & search**: `diff` two versions (As-Is vs To-Be or edit review) and
+  `find` elements by name or type.
 
 ## Requirements
 
@@ -55,8 +63,9 @@ slash commands (namespaced `/bpmn:`):
 |---|---|
 | `/bpmn:explain <file.bpmn>` | Read a diagram and explain it in plain language |
 | `/bpmn:create <description>` | Model a new diagram from a text description |
-| `/bpmn:edit <file.bpmn> — <change>` | Apply a change, then re-layout, validate, lint |
+| `/bpmn:edit <file.bpmn> — <change>` | Apply a change, preserving the existing layout, then validate + lint |
 | `/bpmn:validate <file.bpmn>` | Structural validation + control-flow lint, with fixes |
+| `/bpmn:diff <old.bpmn> <new.bpmn>` | Compare two versions: added / removed / renamed / rewired |
 
 ## Usage
 
@@ -64,9 +73,11 @@ The skill is invoked automatically, but the bundled tool can also be run directl
 
 ```bash
 node skills/bpmn/scripts/bpmn-tool.mjs summarize <file.bpmn> [--json]
-node skills/bpmn/scripts/bpmn-tool.mjs layout    <in.bpmn> [out.bpmn]
+node skills/bpmn/scripts/bpmn-tool.mjs layout    <in.bpmn> [out.bpmn] [--rebuild]
 node skills/bpmn/scripts/bpmn-tool.mjs validate  <file.bpmn>
 node skills/bpmn/scripts/bpmn-tool.mjs lint      <file.bpmn>
+node skills/bpmn/scripts/bpmn-tool.mjs diff      <a.bpmn> <b.bpmn>
+node skills/bpmn/scripts/bpmn-tool.mjs find      <file.bpmn> <term>
 ```
 
 Full workflow, modeling conventions and limits are in
@@ -75,10 +86,12 @@ Full workflow, modeling conventions and limits are in
 
 ## Known limits (auto-layout)
 
-`bpmn-auto-layout` lays out single-pool processes well. It does **not** fully
-lay out collaborations (only the first pool), expanded sub-processes (drawn
-collapsed by design), groups, text annotations, associations, message flows, or
-data objects. See the reference for workarounds.
+Layout covers single-pool flows, collaborations (all pools + message flows),
+swimlanes, sub-process drill-down pages, and data objects / annotations /
+associations. It does **not** auto-place **groups** (a group is a purely visual
+rectangle with no membership in the model). Auto-placement of pools, lanes, data
+objects, and annotations is approximate — valid and clean, but a user may want to
+nudge spacing in a modeler. See the reference for details.
 
 ## License
 
