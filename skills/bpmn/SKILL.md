@@ -35,8 +35,16 @@ A `.bpmn` file holds two layers in one XML document:
 
 Editing DI by hand is where BPMN work goes wrong: coordinates drift, shapes
 overlap, edges cross. **So we never hand-write DI.** You edit semantics; the
-`layout` command regenerates a clean DI from scratch. That is exactly what makes
-the diagram "clear" - a tidy left-to-right layout, generated deterministically.
+`layout` command owns the DI. That is exactly what makes the diagram "clear" - a
+tidy left-to-right layout, generated deterministically.
+
+`layout` is **non-destructive by default**, which is the rule that keeps you out
+of trouble: on a file that already has a diagram it *preserves* the existing
+layout and only syncs it to your edit (prune shapes for deleted elements, place
+shapes for new ones). On a file with no DI it generates a fresh layout. It only
+throws the whole diagram away and rebuilds from scratch when you pass
+`--rebuild`. So the habit is simple: **after editing semantics, always run
+`layout`; it never destroys a good diagram.**
 
 ## Setup (once per machine)
 
@@ -112,15 +120,16 @@ The reliable loop is then **edit semantics -> regenerate layout -> validate -> l
    the skeleton, every element's XML shape, and copy-paste recipes (exclusive /
    parallel / inclusive gateways, boundary events, pools, lanes, message flows).
 
-2. **Regenerate the layout.** This strips any old DI and produces a fresh, clean
-   one - the key to a readable diagram:
+2. **Lay out.** Sync the diagram to your edit:
    ```bash
    node "<SKILL_DIR>/scripts/bpmn-tool.mjs" layout in.bpmn out.bpmn
    ```
-   Omit `out.bpmn` to rewrite the file in place. Because layout is regenerated
-   wholesale, any manual positioning a user previously did is discarded - that's
-   intended here (clean auto-layout), but mention it if they had hand-tuned a
-   diagram.
+   Omit `out.bpmn` to rewrite the file in place. On a file that already has DI
+   this *preserves* the existing layout (hand-tuned positions, Camunda
+   multi-diagram sub-process pages) and only prunes/places shapes to match your
+   change. On a brand-new semantics-only file it generates a clean layout. Add
+   `--rebuild` only when the user explicitly wants the entire diagram re-laid-out
+   from scratch (this discards any manual positioning - say so).
 
 3. **Validate.** Confirm it parses, every flow element got a shape, and no shapes
    overlap:
@@ -128,8 +137,8 @@ The reliable loop is then **edit semantics -> regenerate layout -> validate -> l
    node "<SKILL_DIR>/scripts/bpmn-tool.mjs" validate out.bpmn
    ```
    Fix anything it flags (dangling refs surface as parse warnings; missing shapes
-   usually mean you skipped `layout`; overlapping shapes usually mean a sub-process
-   was left expanded - re-run `layout`, which collapses sub-processes cleanly).
+   usually mean you skipped `layout`; overlaps are checked per diagram plane, so a
+   real overlap means a crowded layout - re-run `layout --rebuild`).
 
 4. **Lint the control flow** - especially when you added or rewired gateways and
    branches:
@@ -166,13 +175,11 @@ everything. Before promising a clean render, recall:
 
 - **Collaborations:** only the **first** participant's process is laid out;
   additional pools need manual placement or separate modeling.
-- **Sub-processes** are drawn as a **collapsed box** (a clean box with a `[+]`).
-  `layout` does this on purpose, because the underlying engine cannot lay out an
-  *expanded* sub-process (its inner nodes spill out and overlap everything). The
-  inner steps stay in the file - `summarize` shows them and a modeler reveals
-  them on expand - they're just not drawn on the main canvas. **If the user needs
-  the inner steps visible and laid out, model them as a separate top-level
-  process, or keep the process flat instead of nesting.** Say which you did.
+- **Sub-processes** get their own **drill-down diagram page** (a separate
+  `BPMNDiagram` plane), exactly like a Camunda export: the sub-process shows as a
+  box on the main canvas, and you "open" it to see its inner steps laid out on
+  their own page. They are **not** flattened onto the main canvas and **not**
+  emptied. `summarize` shows the inner steps; a modeler reveals them on open.
 - **Not laid out:** groups, text annotations, associations, message flows, data
   objects/stores (semantics are preserved, but no shape is generated).
 
@@ -184,8 +191,8 @@ picture. Details and workarounds are in `references/bpmn-reference.md`.
 | Command | Purpose |
 |---|---|
 | `summarize <file> [--json]` | Structured outline of the process(es), for explaining or for understanding before an edit |
-| `layout <in> [out]` | Strip old DI and regenerate a clean diagram layout |
-| `validate <file>` | Parse, report warnings, flag any flow element missing a shape or any overlapping shapes |
+| `layout <in> [out] [--rebuild]` | Sync the diagram to the semantics: preserve & update existing DI, or generate it if absent. `--rebuild` re-lays-out from scratch |
+| `validate <file>` | Parse, report warnings, flag any flow element missing a shape or any per-plane overlapping shapes |
 | `lint <file>` | Find control-flow logic bugs: gateway split/join mismatches (deadlock, double execution) and stuck-token gateways |
 
 All four live in `scripts/bpmn-tool.mjs`. The deeper element reference,

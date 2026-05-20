@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="D" targetNamespace="x">
+  <bpmn:process id="P" isExecutable="false">
+    <bpmn:startEvent id="S1" name="Start"/>
+    <bpmn:task id="T1" name="Work"/>
+    <bpmn:endEvent id="E1" name="End"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="S1" targetRef="T1"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="T1" targetRef="E1"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="dia">
+    <bpmndi:BPMNPlane id="pl" bpmnElement="P">
+      <bpmndi:BPMNShape id="S1_di" bpmnElement="S1"><dc:Bounds x="57" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T1_di" bpmnElement="T1"><dc:Bounds x="175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GHOST_di" bpmnElement="GHOST"><dc:Bounds x="320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E1_di" bpmnElement="E1"><dc:Bounds x="507" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="93" y="70"/><di:waypoint x="175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="275" y="70"/><di:waypoint x="507" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ghostedge_di" bpmnElement="GHOSTFLOW"><di:waypoint x="275" y="70"/><di:waypoint x="320" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

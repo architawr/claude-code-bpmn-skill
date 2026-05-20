@@ -46,6 +46,22 @@ The agent's single, unbreakable rule: **"After editing semantics, always run
 only, and only when explicitly requested."** No new verb for surgical editing —
 fewer concepts, less confusion.
 
+## Key finding (spike, 2026-05-21)
+
+`bpmn-auto-layout` v0.5.0 **already emits a separate `BPMNDiagram`/plane per
+sub-process** (a Camunda-style drill-down plane), with inner shapes in their own
+coordinate space. The skill's `collapseSubProcessDI` then *deletes* those planes
+— the direct cause of "empty sub-processes". It was added only because
+`validate`'s overlap check pools shapes from all planes into one list, so inner
+nodes (local coords overlapping the main plane) trip a false positive.
+
+Consequences:
+- The real Phase 1 fix is to **stop collapsing** and make `validate` partition
+  overlap checks **per plane** + recognise drill-down planes. Sub-process layout
+  then comes free from the library.
+- Collaboration is still only the first participant (no pool shapes, no message
+  flows, other pools undrawn) → real Phase 2 work.
+
 ## Architecture — DI resync (Phase 1 core)
 
 `layout` in resync mode diffs element-ids between semantics and DI:

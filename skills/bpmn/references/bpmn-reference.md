@@ -147,13 +147,13 @@ out everything. Know these before promising a clean diagram:
 - **Collaboration:** only the *first* participant's process is laid out. For a
   multi-pool diagram, tell the user the other pools will need manual placement in
   a modeler, or model each process separately.
-- **Sub-processes** render **collapsed** - a clean box with a `[+]`, inner steps
-  not drawn on the canvas. `layout` does this deliberately: the engine cannot lay
-  out an expanded sub-process (the inner nodes get top-level coordinates and
-  overlap everything), so `layout` strips the inner DI and collapses the box. The
-  inner semantics stay in the file (visible in `summarize` and when expanded in a
-  modeler). If the inner steps must be visible on the canvas, model them as a
-  **separate top-level process**, or keep the parent process flat.
+- **Sub-processes** get their own **drill-down diagram page** - a separate
+  `bpmndi:BPMNDiagram` plane whose `bpmnElement` is the sub-process, with the
+  inner nodes laid out in their own coordinate space (exactly how Camunda stores
+  them). The sub-process appears as a box on the main canvas and "opens" to that
+  page; the inner steps are **not** flattened onto the main canvas and **not**
+  emptied. `validate` checks overlap per plane, so the reused local coordinates
+  are not a false overlap.
 - **Not laid out at all:** groups, text annotations, associations, message flows,
   data objects/stores. The semantics are kept, but no shape/edge is generated.
 

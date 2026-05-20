@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:process id="P" isExecutable="false">
+    <bpmn:startEvent id="S"/>
+    <bpmn:exclusiveGateway id="split" name="In stock?"/>
+    <bpmn:task id="A" name="A"/>
+    <bpmn:task id="B" name="B"/>
+    <bpmn:parallelGateway id="join" name=""/>
+    <bpmn:endEvent id="E"/>
+    <bpmn:sequenceFlow id="f0" sourceRef="S" targetRef="split"/>
+    <bpmn:sequenceFlow id="fa" sourceRef="split" targetRef="A"/>
+    <bpmn:sequenceFlow id="fb" sourceRef="split" targetRef="B"/>
+    <bpmn:sequenceFlow id="fa2" sourceRef="A" targetRef="join"/>
+    <bpmn:sequenceFlow id="fb2" sourceRef="B" targetRef="join"/>
+    <bpmn:sequenceFlow id="fe" sourceRef="join" targetRef="E"/>
+  </bpmn:process>
+</bpmn:definitions>

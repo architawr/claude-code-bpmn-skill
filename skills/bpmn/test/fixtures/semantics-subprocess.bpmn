@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Defs_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="P1" isExecutable="false">
+    <bpmn:startEvent id="S1" name="Start"/>
+    <bpmn:task id="T1" name="Do thing"/>
+    <bpmn:subProcess id="SP1" name="Packaging">
+      <bpmn:startEvent id="S2"/>
+      <bpmn:task id="T2" name="Pack"/>
+      <bpmn:endEvent id="E2"/>
+      <bpmn:sequenceFlow id="if1" sourceRef="S2" targetRef="T2"/>
+      <bpmn:sequenceFlow id="if2" sourceRef="T2" targetRef="E2"/>
+    </bpmn:subProcess>
+    <bpmn:endEvent id="E1" name="End"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="S1" targetRef="T1"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="T1" targetRef="SP1"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="SP1" targetRef="E1"/>
+  </bpmn:process>
+</bpmn:definitions>
