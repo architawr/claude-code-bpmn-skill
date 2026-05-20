@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:process id="P" isExecutable="false">
+    <bpmn:startEvent id="S"/>
+    <bpmn:exclusiveGateway id="G" name="Choice"/>
+    <bpmn:task id="T1" name="Work"/>
+    <bpmn:endEvent id="E"/>
+    <bpmn:endEvent id="E2"/>
+    <bpmn:boundaryEvent id="B" name="oops" attachedToRef="G"><bpmn:timerEventDefinition/></bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="f0" sourceRef="S" targetRef="G"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="G" targetRef="T1"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="T1" targetRef="E"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="B" targetRef="E2"/>
+  </bpmn:process>
+</bpmn:definitions>

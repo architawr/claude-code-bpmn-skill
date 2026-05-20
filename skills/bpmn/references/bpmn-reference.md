@@ -205,6 +205,23 @@ should be the same gateway family.**
   with no end event has nowhere for tokens to finish. *Fix:* add them. `lint`
   reports these per process (and reachability/dead ends per sub-process too).
 
+- **Implicit split.** A task or event with two or more outgoing sequence flows
+  fans the token out in parallel without saying so. *Fix:* route the branches
+  through a parallel or exclusive gateway so the intent is explicit.
+
+- **Misdirected event.** A start event with an incoming flow, or an end event with
+  an outgoing flow. *Fix:* a start only begins and an end only terminates - use an
+  intermediate event if you need flow through that point.
+
+- **Bad boundary host.** A boundary event may only attach to an activity (task,
+  sub-process, call activity) - not a gateway or event. *Fix:* reattach it.
+
+- **Unassigned lane node.** When a process uses lanes, every node should belong to
+  one. *Fix:* add it to a lane's `flowNodeRef`.
+
+- **Intra-pool message flow.** A message flow must cross pools; one whose ends are
+  in the same participant should be a sequence flow. *Fix:* swap it.
+
 ## Other common mistakes
 
 - **Hand-writing DI.** Don't. Author semantics, run `layout`. Manual coordinates

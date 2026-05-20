@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:collaboration id="C">
+    <bpmn:participant id="Pa" name="Shop" processRef="Pcust"/>
+    <bpmn:participant id="Pb" name="Bank" processRef="Pbank"/>
+    <bpmn:messageFlow id="mf" sourceRef="T_a" targetRef="T_b"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Pcust">
+    <bpmn:startEvent id="S_c"/><bpmn:task id="T_a" name="A"/><bpmn:task id="T_b" name="B"/><bpmn:endEvent id="E_c"/>
+    <bpmn:sequenceFlow id="c1" sourceRef="S_c" targetRef="T_a"/>
+    <bpmn:sequenceFlow id="c2" sourceRef="T_a" targetRef="T_b"/>
+    <bpmn:sequenceFlow id="c3" sourceRef="T_b" targetRef="E_c"/>
+  </bpmn:process>
+  <bpmn:process id="Pbank">
+    <bpmn:startEvent id="S_k"/><bpmn:endEvent id="E_k"/>
+    <bpmn:sequenceFlow id="k1" sourceRef="S_k" targetRef="E_k"/>
+  </bpmn:process>
+</bpmn:definitions>

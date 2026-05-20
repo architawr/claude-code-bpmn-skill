@@ -90,13 +90,15 @@ pass `validate` but are wrong behavior - the kind that are easy to miss by eye:
 node "<SKILL_DIR>/scripts/bpmn-tool.mjs" lint path/to/file.bpmn
 ```
 
-It flags a parallel (AND) join fed by an exclusive (XOR) split (the join waits
-for a token that never comes - **deadlock**), a parallel split merged by an
-exclusive join (everything after runs **twice**), an exclusive gateway whose
-conditions can all be false with no default (**stuck token**), nodes with no path
-from a start event (**unreachable**), non-end nodes with no outgoing flow (**dead
-end**), and a process missing a start or end event. Read its finding, confirm it
-against the model, then explain it in plain terms.
+It flags: a parallel (AND) join fed by an exclusive (XOR) split (**deadlock**); a
+parallel split merged by an exclusive join (runs **twice**); an exclusive gateway
+whose conditions can all be false with no default (**stuck token**);
+**unreachable** nodes; **dead ends** (non-end node, no outgoing); a missing
+start/end; an **implicit split** (non-gateway node with several outgoing flows);
+**misdirected events** (start with an incoming flow, end with an outgoing one); a
+boundary event on a **non-activity**; a node in **no lane** when the process uses
+lanes; and a message flow that stays **inside one pool**. Read its finding,
+confirm it against the model, then explain it in plain terms.
 
 ## Creating or editing a diagram
 
@@ -153,10 +155,10 @@ The reliable loop is then **edit semantics -> regenerate layout -> validate -> l
    node "<SKILL_DIR>/scripts/bpmn-tool.mjs" lint out.bpmn
    ```
    `validate` proves the file is well-formed; `lint` proves the *logic* is sound.
-   It catches the silent bugs: deadlock (parallel join after an exclusive split),
-   double execution (exclusive join after a parallel split), stuck tokens
-   (all-conditioned gateway with no default), unreachable nodes, dead ends, and a
-   missing start/end event.
+   It catches the silent bugs: gateway split/join mismatches (deadlock, double
+   execution), stuck tokens, unreachable nodes, dead ends, missing start/end,
+   implicit splits, misdirected start/end events, boundary events on a
+   non-activity, unassigned lane nodes, and message flows that stay inside a pool.
 
 Don't claim a diagram is done until `validate` and `lint` both pass - they're
 quick and catch the mistakes (typo'd refs, missing layout, gateway deadlocks)
@@ -209,7 +211,7 @@ Details and workarounds are in `references/bpmn-reference.md`.
 | `summarize <file> [--json]` | Structured outline of the process(es), for explaining or for understanding before an edit |
 | `layout <in> [out] [--rebuild]` | Sync the diagram to the semantics: preserve & update existing DI, or generate it if absent. `--rebuild` re-lays-out from scratch |
 | `validate <file>` | Parse, report warnings, flag any flow element missing a shape or any per-plane overlapping shapes |
-| `lint <file>` | Find control-flow logic bugs: gateway split/join mismatches (deadlock, double execution), stuck-token gateways, unreachable nodes, dead ends, missing start/end |
+| `lint <file>` | Find control-flow / structural bugs: gateway split/join mismatches, stuck-token gateways, unreachable nodes, dead ends, missing start/end, implicit splits, misdirected events, bad boundary hosts, unassigned lane nodes, intra-pool message flows |
 | `diff <a> <b>` | Semantic + structural diff: elements added/removed/renamed/retyped and sequence flows rewired (e.g. As-Is vs To-Be, or reviewing an edit) |
 | `find <file> <term>` | List flow elements whose name or type contains `term` (case-insensitive) - quick lookup before an edit |
 

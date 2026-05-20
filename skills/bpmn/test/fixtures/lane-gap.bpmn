@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:process id="P" isExecutable="false">
+    <bpmn:laneSet id="ls">
+      <bpmn:lane id="L1" name="A"><bpmn:flowNodeRef>S</bpmn:flowNodeRef><bpmn:flowNodeRef>T1</bpmn:flowNodeRef></bpmn:lane>
+      <bpmn:lane id="L2" name="B"><bpmn:flowNodeRef>T2</bpmn:flowNodeRef></bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="S"/>
+    <bpmn:task id="T1" name="One"/>
+    <bpmn:task id="T2" name="Two"/>
+    <bpmn:endEvent id="E" name="Unassigned end"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="S" targetRef="T1"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="T1" targetRef="T2"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="T2" targetRef="E"/>
+  </bpmn:process>
+</bpmn:definitions>

@@ -213,13 +213,19 @@ function nearestDivergingUpstream(startId, out, inc, nodes) {
 function structuralFindings(container, findings, isTop) {
   const nodes = new Map();
   const outE = new Map();
+  const inE = new Map();
   const attach = new Map();
   for (const el of container.flowElements || []) if (shortType(el) !== 'SequenceFlow' && isFlowNode(el)) nodes.set(el.id, el);
   for (const el of container.flowElements || []) {
     if (shortType(el) !== 'SequenceFlow') continue;
     const s = el.sourceRef && el.sourceRef.id;
     const t = el.targetRef && el.targetRef.id;
-    if (s && t) { if (!outE.has(s)) outE.set(s, []); outE.get(s).push(t); }
+    if (s && t) {
+      if (!outE.has(s)) outE.set(s, []);
+      outE.get(s).push(t);
+      if (!inE.has(t)) inE.set(t, []);
+      inE.get(t).push(s);
+    }
   }
   for (const el of nodes.values()) {
     if (shortType(el) === 'BoundaryEvent' && el.attachedToRef) {
@@ -258,6 +264,39 @@ function structuralFindings(container, findings, isTop) {
   for (const [id, el] of nodes) {
     if (shortType(el) === 'EndEvent') continue;
     if (!(outE.get(id) || []).length) findings.push(`DEAD END: ${label(el)}${where} has no outgoing sequence flow, so the token stops there. Fix: connect it onward or end the branch with an end event.`);
+  }
+
+  // Implicit split: a non-gateway node with several outgoing flows fans out in
+  // parallel without saying so. Make the intent explicit with a gateway.
+  for (const [id, el] of nodes) {
+    if (/Gateway$/.test(shortType(el))) continue;
+    const n = (outE.get(id) || []).length;
+    if (n > 1) findings.push(`IMPLICIT SPLIT: ${label(el)}${where} has ${n} outgoing flows but is not a gateway, so it splits the token implicitly. Fix: route the branches through a parallel or exclusive gateway.`);
+  }
+
+  // Misdirected events: a start event should have no incoming, an end event no outgoing.
+  for (const [id, el] of nodes) {
+    if (shortType(el) === 'StartEvent' && (inE.get(id) || []).length) findings.push(`MISDIRECTED EVENT: start event ${label(el)}${where} has an incoming sequence flow; a start event only begins the process. Fix: remove the incoming flow or use an intermediate event.`);
+    if (shortType(el) === 'EndEvent' && (outE.get(id) || []).length) findings.push(`MISDIRECTED EVENT: end event ${label(el)}${where} has an outgoing sequence flow; an end event terminates a path. Fix: remove the outgoing flow or use an intermediate event.`);
+  }
+
+  // Boundary events may only attach to activities (task / sub-process / call activity).
+  const isActivity = (t) => /Task$/.test(t) || t === 'CallActivity' || /SubProcess$|Transaction$|AdHocSubProcess$/.test(t);
+  for (const [, el] of nodes) {
+    if (shortType(el) !== 'BoundaryEvent' || !el.attachedToRef) continue;
+    const host = nodes.get(el.attachedToRef.id);
+    if (host && !isActivity(shortType(host))) findings.push(`BAD BOUNDARY: boundary event ${label(el)}${where} is attached to a ${shortType(host)}, not an activity. Boundary events can only attach to tasks, sub-processes, or call activities.`);
+  }
+
+  // Lane membership: if the process uses lanes, every node should be in one.
+  const lanes = (container.laneSets || []).flatMap((ls) => ls.lanes || []);
+  if (lanes.length) {
+    const assigned = new Set();
+    for (const lane of lanes) for (const ref of lane.flowNodeRef || []) assigned.add(ref.id);
+    for (const [id, el] of nodes) {
+      if (shortType(el) === 'BoundaryEvent') continue; // inherit the host's lane
+      if (!assigned.has(id)) findings.push(`UNASSIGNED NODE: ${label(el)}${where} is in no lane, though the process uses lanes. Fix: add it to a lane's flowNodeRef.`);
+    }
   }
 }
 
@@ -310,6 +349,25 @@ export async function lintModel(xml) {
       }
     };
     walkSub(proc);
+  }
+
+  // Message flows must cross pools; one that stays inside a single participant
+  // should be a sequence flow.
+  const collab = (defs.rootElements || []).find((r) => shortType(r) === 'Collaboration');
+  if (collab) {
+    const partOf = new Map();
+    for (const p of collab.participants || []) {
+      if (!p.processRef) continue;
+      const walk = (c) => { for (const el of c.flowElements || []) { partOf.set(el.id, p.id); if (el.flowElements) walk(el); } };
+      walk(p.processRef);
+    }
+    for (const mf of collab.messageFlows || []) {
+      const s = mf.sourceRef && mf.sourceRef.id;
+      const t = mf.targetRef && mf.targetRef.id;
+      if (s && t && partOf.get(s) && partOf.get(s) === partOf.get(t)) {
+        findings.push(`INTERNAL MESSAGE FLOW: message flow #${mf.id} connects two nodes in the same pool (${partOf.get(s)}); message flows must cross pools. Use a sequence flow within a pool.`);
+      }
+    }
   }
   return findings;
 }
