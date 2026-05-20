@@ -283,6 +283,219 @@ function normalizeFlowRefs(defs) {
   }
 }
 
+// --- Collaboration layout (bpmn-auto-layout only does the first pool) ---
+
+const POOL_LABEL_W = 30;
+const POOL_MARGIN = 30;
+const POOL_GAP = 60;
+
+function allElementsById(defs) {
+  const map = new Map();
+  const add = (el) => { if (el && el.id) map.set(el.id, el); };
+  for (const root of defs.rootElements || []) {
+    if (shortType(root) === 'Collaboration') {
+      for (const p of root.participants || []) add(p);
+      for (const mf of root.messageFlows || []) add(mf);
+    }
+    if (shortType(root) === 'Process') {
+      const walk = (c) => {
+        for (const ls of c.laneSets || []) for (const lane of ls.lanes || []) add(lane);
+        for (const el of c.flowElements || []) { add(el); if (el.flowElements) walk(el); }
+      };
+      add(root); walk(root);
+    }
+  }
+  return map;
+}
+
+// Read a laid-out plane down to plain numbers, so we can rebuild DI in the final
+// document referencing the final document's own elements.
+function readPlaneCoords(plane) {
+  const shapes = [];
+  const edges = [];
+  for (const pe of plane.planeElement || []) {
+    if (localName(pe) === 'BPMNShape' && pe.bounds && pe.bpmnElement) {
+      shapes.push({ id: pe.bpmnElement.id, x: pe.bounds.x, y: pe.bounds.y, width: pe.bounds.width, height: pe.bounds.height, isExpanded: pe.isExpanded === true });
+    } else if (localName(pe) === 'BPMNEdge' && pe.bpmnElement) {
+      edges.push({ id: pe.bpmnElement.id, waypoints: (pe.waypoint || []).map((w) => ({ x: w.x, y: w.y })) });
+    }
+  }
+  return { shapes, edges };
+}
+
+const bboxOf = (shapes) => {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const s of shapes) {
+    minX = Math.min(minX, s.x); minY = Math.min(minY, s.y);
+    maxX = Math.max(maxX, s.x + s.width); maxY = Math.max(maxY, s.y + s.height);
+  }
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+};
+
+function addShapeAbs(moddle, plane, el, b, isExpanded) {
+  const shape = moddle.create('bpmndi:BPMNShape', { id: el.id + '_di', bpmnElement: el, bounds: moddle.create('dc:Bounds', b) });
+  if (isExpanded) shape.isExpanded = true;
+  plane.planeElement.push(shape);
+}
+
+function addPlaneCoords(moddle, plane, elemById, data, dx, dy) {
+  for (const s of data.shapes) {
+    const el = elemById.get(s.id);
+    if (!el) continue;
+    addShapeAbs(moddle, plane, el, { x: s.x + dx, y: s.y + dy, width: s.width, height: s.height }, s.isExpanded);
+  }
+  for (const e of data.edges) {
+    const el = elemById.get(e.id);
+    if (!el) continue;
+    const waypoint = e.waypoints.map((p) => moddle.create('dc:Point', { x: p.x + dx, y: p.y + dy }));
+    plane.planeElement.push(moddle.create('bpmndi:BPMNEdge', { id: el.id + '_di', bpmnElement: el, waypoint }));
+  }
+}
+
+async function singleProcessXml(semXml, processId) {
+  const m = new BpmnModdle();
+  const { rootElement: d } = await m.fromXML(semXml);
+  d.rootElements = (d.rootElements || []).filter((r) => shortType(r) === 'Process' && r.id === processId);
+  d.diagrams = [];
+  const { xml } = await m.toXML(d);
+  return xml;
+}
+
+async function generateCollaborationLayout(semXml, layoutProcess) {
+  const moddle = new BpmnModdle();
+  const { rootElement: defs } = await moddle.fromXML(semXml);
+  const collab = (defs.rootElements || []).find((r) => shortType(r) === 'Collaboration');
+  const elemById = allElementsById(defs);
+
+  const collabPlane = moddle.create('bpmndi:BPMNPlane', { id: 'BPMNPlane_' + collab.id, bpmnElement: collab, planeElement: [] });
+  defs.diagrams = [moddle.create('bpmndi:BPMNDiagram', { id: 'BPMNDiagram_' + collab.id, plane: collabPlane })];
+
+  let cursorY = 0;
+  for (const p of collab.participants || []) {
+    if (!p.processRef) continue; // empty pool (black box): drawn separately if needed
+    const laidXml = await layoutProcess(await singleProcessXml(semXml, p.processRef.id));
+    const lm = new BpmnModdle();
+    const { rootElement: laid } = await lm.fromXML(laidXml);
+
+    const mainPlane = (laid.diagrams || []).find((d) => d.plane && d.plane.bpmnElement && d.plane.bpmnElement.id === p.processRef.id);
+    const main = mainPlane ? readPlaneCoords(mainPlane.plane) : { shapes: [], edges: [] };
+    const bb = bboxOf(main.shapes);
+    const dx = POOL_LABEL_W + POOL_MARGIN - (isFinite(bb.minX) ? bb.minX : 0);
+    const dy = cursorY + POOL_MARGIN - (isFinite(bb.minY) ? bb.minY : 0);
+
+    const poolW = (isFinite(bb.width) ? bb.width : 200) + POOL_MARGIN * 2 + POOL_LABEL_W;
+    const poolH = (isFinite(bb.height) ? bb.height : 100) + POOL_MARGIN * 2;
+    const pool = moddle.create('bpmndi:BPMNShape', {
+      id: p.id + '_di', bpmnElement: p, isHorizontal: true,
+      bounds: moddle.create('dc:Bounds', { x: 0, y: cursorY, width: poolW, height: poolH }),
+    });
+    collabPlane.planeElement.push(pool);
+
+    addPlaneCoords(moddle, collabPlane, elemById, main, dx, dy);
+
+    // sub-process drill-down pages: keep their own coordinate space (own page)
+    for (const d of laid.diagrams || []) {
+      if (!d.plane || !d.plane.bpmnElement || d.plane.bpmnElement.id === p.processRef.id) continue;
+      const sub = elemById.get(d.plane.bpmnElement.id);
+      if (!sub) continue;
+      const subPlane = moddle.create('bpmndi:BPMNPlane', { id: 'BPMNPlane_' + sub.id, bpmnElement: sub, planeElement: [] });
+      addPlaneCoords(moddle, subPlane, elemById, readPlaneCoords(d.plane), 0, 0);
+      defs.diagrams.push(moddle.create('bpmndi:BPMNDiagram', { id: 'BPMNDiagram_' + sub.id, plane: subPlane }));
+    }
+
+    cursorY += poolH + POOL_GAP;
+  }
+
+  // message flows between pools
+  const boundsIn = (id) => { const s = collabPlane.planeElement.find((pe) => pe.bpmnElement && pe.bpmnElement.id === id && pe.bounds); return s ? s.bounds : null; };
+  for (const mf of collab.messageFlows || []) {
+    const s = boundsIn(mf.sourceRef && mf.sourceRef.id);
+    const t = boundsIn(mf.targetRef && mf.targetRef.id);
+    if (!s || !t) continue;
+    const [from, to] = s.y <= t.y
+      ? [{ x: s.x + s.width / 2, y: s.y + s.height }, { x: t.x + t.width / 2, y: t.y }]
+      : [{ x: s.x + s.width / 2, y: s.y }, { x: t.x + t.width / 2, y: t.y + t.height }];
+    const waypoint = [moddle.create('dc:Point', from), moddle.create('dc:Point', to)];
+    collabPlane.planeElement.push(moddle.create('bpmndi:BPMNEdge', { id: mf.id + '_di', bpmnElement: mf, waypoint }));
+  }
+
+  const { xml } = await moddle.toXML(defs);
+  return xml;
+}
+
+// --- Laned (swimlane) layout: bpmn-auto-layout ignores lanes entirely ---
+
+const LANE_LABEL_W = 30;
+const LANE_PAD = 20;
+const LANE_H = 150;
+
+const lanesOf = (proc) => {
+  const out = [];
+  for (const ls of proc.laneSets || []) for (const lane of ls.lanes || []) out.push(lane);
+  return out;
+};
+
+function orthoWaypoints(moddle, a, b) {
+  const P = (x, y) => moddle.create('dc:Point', { x, y });
+  const ay = a.y + a.height / 2, by = b.y + b.height / 2;
+  const ax = a.x + a.width, bx = b.x;
+  if (Math.abs(ay - by) < 1) return [P(ax, ay), P(bx, by)];
+  const midX = Math.round((ax + bx) / 2);
+  return [P(ax, ay), P(midX, ay), P(midX, by), P(bx, by)];
+}
+
+// Take bpmn-auto-layout's horizontal placement (x positions) and re-stack the
+// nodes into horizontal lane bands by their flowNodeRef, drawing lane shapes and
+// re-routing edges orthogonally.
+async function generateLanedLayout(semXml, layoutProcess) {
+  const lm = new BpmnModdle();
+  const { rootElement: laid } = await lm.fromXML(await layoutProcess(semXml));
+  const base = readPlaneCoords(laid.diagrams[0].plane);
+  if (!base.shapes.length) return await layoutProcess(semXml);
+
+  const fm = new BpmnModdle();
+  const { rootElement: defs } = await fm.fromXML(semXml);
+  const elemById = allElementsById(defs);
+  const proc = (defs.rootElements || []).find((r) => shortType(r) === 'Process');
+  const lanes = lanesOf(proc);
+  const laneOfNode = new Map();
+  for (const lane of lanes) for (const ref of lane.flowNodeRef || []) laneOfNode.set(ref.id, lane.id);
+
+  const plane = fm.create('bpmndi:BPMNPlane', { id: 'BPMNPlane_' + proc.id, bpmnElement: proc, planeElement: [] });
+  defs.diagrams = [fm.create('bpmndi:BPMNDiagram', { id: 'BPMNDiagram_' + proc.id, plane })];
+
+  const minX = Math.min(...base.shapes.map((s) => s.x));
+  const maxRight = Math.max(...base.shapes.map((s) => s.x + s.width));
+  const laneW = maxRight - minX + LANE_PAD * 2;
+  const dx = LANE_LABEL_W + LANE_PAD - minX;
+
+  const bandTop = new Map();
+  lanes.forEach((lane, i) => {
+    const y = i * LANE_H;
+    bandTop.set(lane.id, y);
+    addShapeAbs(fm, plane, elemById.get(lane.id), { x: LANE_LABEL_W, y, width: laneW, height: LANE_H }, false);
+    plane.planeElement[plane.planeElement.length - 1].isHorizontal = true;
+  });
+
+  for (const s of base.shapes) {
+    const el = elemById.get(s.id);
+    if (!el) continue;
+    const top = bandTop.has(laneOfNode.get(s.id)) ? bandTop.get(laneOfNode.get(s.id)) : 0;
+    addShapeAbs(fm, plane, el, { x: s.x + dx, y: top + (LANE_H - s.height) / 2, width: s.width, height: s.height }, s.isExpanded);
+  }
+
+  const boundsIn = (id) => { const sh = plane.planeElement.find((pe) => pe.bpmnElement && pe.bpmnElement.id === id && pe.bounds); return sh ? sh.bounds : null; };
+  for (const fe of proc.flowElements || []) {
+    if (shortType(fe) !== 'SequenceFlow') continue;
+    const a = boundsIn(fe.sourceRef && fe.sourceRef.id);
+    const b = boundsIn(fe.targetRef && fe.targetRef.id);
+    if (a && b) plane.planeElement.push(fm.create('bpmndi:BPMNEdge', { id: fe.id + '_di', bpmnElement: fe, waypoint: orthoWaypoints(fm, a, b) }));
+  }
+
+  const { xml } = await fm.toXML(defs);
+  return xml;
+}
+
 // Full regeneration from scratch: discard all DI and let bpmn-auto-layout
 // rebuild it. Unlike the old tool, we keep the per-sub-process drill-down planes
 // the library emits (no collapse) - `validate` is plane-aware instead.
@@ -290,9 +503,13 @@ async function generateLayout(xml) {
   const { layoutProcess } = await import('bpmn-auto-layout');
   const moddle = new BpmnModdle();
   const { rootElement: defs } = await moddle.fromXML(xml);
+  const collab = (defs.rootElements || []).find((r) => shortType(r) === 'Collaboration');
+  const lanedProc = (defs.rootElements || []).find((r) => shortType(r) === 'Process' && lanesOf(r).length);
   defs.diagrams = [];
   normalizeFlowRefs(defs);
   const { xml: normalized } = await moddle.toXML(defs);
+  if (collab) return await generateCollaborationLayout(normalized, layoutProcess);
+  if (lanedProc) return await generateLanedLayout(normalized, layoutProcess);
   return await layoutProcess(normalized);
 }
 
@@ -499,20 +716,105 @@ export async function validateModel(xml) {
   return { ok, warnings: warnings.map((w) => w.message), missing, overlaps: overlapsFound };
 }
 
+// --- Data objects, text annotations, associations (auto-layout draws none) ---
+
+function addArtifactEdge(moddle, plane, el, srcId, tgtId) {
+  const a = boundsOf(plane, srcId);
+  const b = boundsOf(plane, tgtId);
+  if (!a || !b) return;
+  plane.planeElement.push(moddle.create('bpmndi:BPMNEdge', { id: el.id + '_di', bpmnElement: el, waypoint: orthoWaypoints(moddle, a, b) }));
+}
+
+function dataAnchor(container, dataId, plane) {
+  for (const el of container.flowElements || []) {
+    for (const a of el.dataOutputAssociations || []) if (a.targetRef && a.targetRef.id === dataId) { const b = boundsOf(plane, el.id); if (b) return b; }
+    for (const a of el.dataInputAssociations || []) for (const s of a.sourceRef || []) if (s.id === dataId) { const b = boundsOf(plane, el.id); if (b) return b; }
+  }
+  return null;
+}
+
+function annotationAnchor(container, annId, plane) {
+  for (const ar of container.artifacts || []) {
+    if (shortType(ar) !== 'Association') continue;
+    if (ar.targetRef && ar.targetRef.id === annId) { const b = boundsOf(plane, ar.sourceRef && ar.sourceRef.id); if (b) return b; }
+    if (ar.sourceRef && ar.sourceRef.id === annId) { const b = boundsOf(plane, ar.targetRef && ar.targetRef.id); if (b) return b; }
+  }
+  return null;
+}
+
+// Give shapes to data object/store references and text annotations, and edges to
+// associations and data associations. These have no auto-layout, so we place
+// them next to the node they relate to. Runs after the main layout, on any plane.
+async function placeExtras(xml) {
+  const { defs, moddle } = await parseBpmn(xml);
+  const has = diIndex(defs);
+  const planeOf = planesByContainer(defs);
+  let changed = false;
+  for (const c of containersOf(defs)) {
+    const plane = planeOf.get(c.id);
+    if (!plane) continue;
+
+    for (const el of c.flowElements || []) {
+      const t = shortType(el);
+      if ((t !== 'DataObjectReference' && t !== 'DataStoreReference') || has.has(el.id)) continue;
+      const size = t === 'DataStoreReference' ? { width: 50, height: 50 } : { width: 36, height: 50 };
+      const anchor = dataAnchor(c, el.id, plane);
+      const start = anchor
+        ? { x: anchor.x + anchor.width / 2 - size.width / 2, y: anchor.y + anchor.height + 50 }
+        : { x: 100, y: 250 };
+      const b = nudge(plane, { ...start, ...size });
+      makeShape(moddle, plane, el, b.x, b.y, b.width, b.height);
+      changed = true;
+    }
+
+    for (const el of c.artifacts || []) {
+      if (shortType(el) !== 'TextAnnotation' || has.has(el.id)) continue;
+      const size = { width: 120, height: 40 };
+      const anchor = annotationAnchor(c, el.id, plane);
+      const start = anchor
+        ? { x: anchor.x + anchor.width + 50, y: Math.max(0, anchor.y - 50) }
+        : { x: 100, y: 0 };
+      const b = nudge(plane, { ...start, ...size });
+      makeShape(moddle, plane, el, b.x, b.y, b.width, b.height);
+      changed = true;
+    }
+
+    for (const el of c.artifacts || []) {
+      if (shortType(el) !== 'Association' || has.has(el.id)) continue;
+      addArtifactEdge(moddle, plane, el, el.sourceRef && el.sourceRef.id, el.targetRef && el.targetRef.id);
+      changed = true;
+    }
+    for (const el of c.flowElements || []) {
+      for (const a of el.dataOutputAssociations || []) {
+        if (has.has(a.id)) continue;
+        addArtifactEdge(moddle, plane, a, el.id, a.targetRef && a.targetRef.id); changed = true;
+      }
+      for (const a of el.dataInputAssociations || []) {
+        if (has.has(a.id)) continue;
+        addArtifactEdge(moddle, plane, a, a.sourceRef && a.sourceRef[0] && a.sourceRef[0].id, el.id); changed = true;
+      }
+    }
+  }
+  return changed ? (await moddle.toXML(defs)).xml : xml;
+}
+
 /**
  * Safe layout. With existing DI (and no rebuild) it preserves the diagram and
  * only re-syncs it to the semantics (prune removed elements, place new ones).
- * With no DI, or rebuild:true, it regenerates from scratch.
+ * With no DI, or rebuild:true, it regenerates from scratch. In every case data
+ * objects, annotations, and associations are placed afterwards.
  */
 export async function layoutModel(xml, opts = {}) {
   const { defs, moddle } = await parseBpmn(xml);
   const hasDI = (defs.diagrams || []).length > 0;
+  let out;
   if (opts.rebuild || !hasDI) {
-    return await generateLayout(xml);
+    out = await generateLayout(xml);
+  } else {
+    // resync: preserve existing geometry; prune removed, place new.
+    pruneDI(defs);
+    addDI(defs, moddle);
+    out = (await moddle.toXML(defs)).xml;
   }
-  // resync: preserve existing geometry; prune removed, place new.
-  pruneDI(defs);
-  addDI(defs, moddle);
-  const { xml: out } = await moddle.toXML(defs);
-  return out;
+  return await placeExtras(out);
 }

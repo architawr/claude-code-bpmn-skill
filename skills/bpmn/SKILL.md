@@ -168,23 +168,31 @@ habits that make diagrams readable:
   give exclusive gateways a default/else so a token can't get stuck.
 - **Don't overload one diagram.** If it sprawls, push detail into a sub-process.
 
-## Auto-layout: know its limits up front
+## Auto-layout: what it covers
 
-`layout` is excellent for ordinary single-pool processes but does not lay out
-everything. Before promising a clean render, recall:
+`layout` handles the full range of everyday BPMN, not just single-pool flows:
 
-- **Collaborations:** only the **first** participant's process is laid out;
-  additional pools need manual placement or separate modeling.
+- **Collaborations:** every pool is laid out, stacked vertically, with message
+  flows routed between them (not just the first participant).
+- **Lanes (swimlanes):** nodes are placed in their lane's horizontal band and the
+  lane shapes are drawn.
 - **Sub-processes** get their own **drill-down diagram page** (a separate
   `BPMNDiagram` plane), exactly like a Camunda export: the sub-process shows as a
   box on the main canvas, and you "open" it to see its inner steps laid out on
   their own page. They are **not** flattened onto the main canvas and **not**
   emptied. `summarize` shows the inner steps; a modeler reveals them on open.
-- **Not laid out:** groups, text annotations, associations, message flows, data
-  objects/stores (semantics are preserved, but no shape is generated).
+- **Data objects/stores, text annotations, associations** get shapes/edges placed
+  next to the element they relate to.
 
-If a request leans on these, say so honestly rather than implying a perfect
-picture. Details and workarounds are in `references/bpmn-reference.md`.
+Remaining limits, worth stating honestly when a request leans on them:
+
+- **Groups** are not auto-placed (a group is a purely visual rectangle with no
+  membership in the model, so there's nothing to size it from). Add one in a
+  modeler if needed.
+- Auto-placement of pools, lanes, data objects, and annotations is **approximate**
+  - clean and valid, but a user may want to nudge spacing in a modeler.
+
+Details and workarounds are in `references/bpmn-reference.md`.
 
 ## Bundled tools
 

@@ -139,14 +139,16 @@ Lanes inside a process:
 </bpmn:process>
 ```
 
-## Auto-layout limits and workarounds
+## Auto-layout coverage and limits
 
-`layout` (bpmn-auto-layout) is great for ordinary processes but does **not** lay
-out everything. Know these before promising a clean diagram:
+`layout` covers the full range of everyday BPMN. On top of plain bpmn-auto-layout
+(single-pool flows) the skill adds:
 
-- **Collaboration:** only the *first* participant's process is laid out. For a
-  multi-pool diagram, tell the user the other pools will need manual placement in
-  a modeler, or model each process separately.
+- **Collaboration:** every pool is laid out, stacked vertically in its own band,
+  with message flows routed between pools. (Plain bpmn-auto-layout does only the
+  first participant; the skill lays out each process and assembles the pools.)
+- **Lanes (swimlanes):** nodes are re-stacked into their lane's horizontal band,
+  lane shapes are drawn, and edges are re-routed orthogonally.
 - **Sub-processes** get their own **drill-down diagram page** - a separate
   `bpmndi:BPMNDiagram` plane whose `bpmnElement` is the sub-process, with the
   inner nodes laid out in their own coordinate space (exactly how Camunda stores
@@ -154,12 +156,16 @@ out everything. Know these before promising a clean diagram:
   page; the inner steps are **not** flattened onto the main canvas and **not**
   emptied. `validate` checks overlap per plane, so the reused local coordinates
   are not a false overlap.
-- **Not laid out at all:** groups, text annotations, associations, message flows,
-  data objects/stores. The semantics are kept, but no shape/edge is generated.
+- **Data objects/stores, text annotations, associations** get shapes and edges
+  placed next to the element they relate to.
 
-If a diagram leans on these, say so plainly rather than claiming a clean render.
-For everything else (single-pool flows with events, tasks, gateways, boundary
-events), auto-layout produces a tidy left-to-right diagram.
+Remaining limits:
+
+- **Groups** are not auto-placed - a group is a purely visual rectangle with no
+  membership in the model, so there's nothing to size it from. Add one in a
+  modeler if it's needed.
+- Auto-placement of pools, lanes, data objects, and annotations is **approximate**:
+  valid and clean, but a user may want to nudge spacing in a modeler. Say so.
 
 ## Control-flow pitfalls (run `lint`)
 

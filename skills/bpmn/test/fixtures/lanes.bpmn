@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:process id="P" isExecutable="false">
+    <bpmn:laneSet id="ls">
+      <bpmn:lane id="L1" name="Sales">
+        <bpmn:flowNodeRef>S</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T1</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="L2" name="Warehouse">
+        <bpmn:flowNodeRef>T2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>E</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="S" name="Request"/>
+    <bpmn:task id="T1" name="Quote"/>
+    <bpmn:task id="T2" name="Pack"/>
+    <bpmn:endEvent id="E" name="Done"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="S" targetRef="T1"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="T1" targetRef="T2"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="T2" targetRef="E"/>
+  </bpmn:process>
+</bpmn:definitions>

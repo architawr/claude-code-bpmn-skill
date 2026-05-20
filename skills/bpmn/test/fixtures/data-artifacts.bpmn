@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:process id="P" isExecutable="false">
+    <bpmn:startEvent id="S" name="Start"/>
+    <bpmn:task id="T1" name="Create invoice">
+      <bpmn:dataOutputAssociation id="doa1">
+        <bpmn:targetRef>DOR1</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:task>
+    <bpmn:endEvent id="E" name="End"/>
+    <bpmn:dataObjectReference id="DOR1" name="Invoice" dataObjectRef="DO1"/>
+    <bpmn:dataObject id="DO1"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="S" targetRef="T1"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="T1" targetRef="E"/>
+    <bpmn:textAnnotation id="TA1">
+      <bpmn:text>Must include VAT</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="as1" sourceRef="T1" targetRef="TA1"/>
+  </bpmn:process>
+</bpmn:definitions>

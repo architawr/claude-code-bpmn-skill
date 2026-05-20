@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="D" targetNamespace="x">
+  <bpmn:collaboration id="C1">
+    <bpmn:participant id="Pa" name="Customer" processRef="Pcust"/>
+    <bpmn:participant id="Pb" name="Shop" processRef="Pshop"/>
+    <bpmn:messageFlow id="mf1" sourceRef="T_order" targetRef="S_shop"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Pcust">
+    <bpmn:startEvent id="S_c" name="Need item"/>
+    <bpmn:task id="T_order" name="Place order"/>
+    <bpmn:endEvent id="E_c" name="Done"/>
+    <bpmn:sequenceFlow id="c1" sourceRef="S_c" targetRef="T_order"/>
+    <bpmn:sequenceFlow id="c2" sourceRef="T_order" targetRef="E_c"/>
+  </bpmn:process>
+  <bpmn:process id="Pshop">
+    <bpmn:startEvent id="S_shop" name="Order received"/>
+    <bpmn:task id="T_fill" name="Fulfill order"/>
+    <bpmn:endEvent id="E_s" name="Shipped"/>
+    <bpmn:sequenceFlow id="s1" sourceRef="S_shop" targetRef="T_fill"/>
+    <bpmn:sequenceFlow id="s2" sourceRef="T_fill" targetRef="E_s"/>
+  </bpmn:process>
+</bpmn:definitions>
