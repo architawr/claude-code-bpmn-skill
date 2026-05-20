@@ -87,9 +87,11 @@ node "<SKILL_DIR>/scripts/bpmn-tool.mjs" lint path/to/file.bpmn
 
 It flags a parallel (AND) join fed by an exclusive (XOR) split (the join waits
 for a token that never comes - **deadlock**), a parallel split merged by an
-exclusive join (everything after runs **twice**), and an exclusive gateway whose
-conditions can all be false with no default (**stuck token**). Read its finding,
-confirm it against the model, then explain it in plain terms.
+exclusive join (everything after runs **twice**), an exclusive gateway whose
+conditions can all be false with no default (**stuck token**), nodes with no path
+from a start event (**unreachable**), non-end nodes with no outgoing flow (**dead
+end**), and a process missing a start or end event. Read its finding, confirm it
+against the model, then explain it in plain terms.
 
 ## Creating or editing a diagram
 
@@ -147,8 +149,9 @@ The reliable loop is then **edit semantics -> regenerate layout -> validate -> l
    ```
    `validate` proves the file is well-formed; `lint` proves the *logic* is sound.
    It catches the silent bugs: deadlock (parallel join after an exclusive split),
-   double execution (exclusive join after a parallel split), and stuck tokens
-   (all-conditioned gateway with no default).
+   double execution (exclusive join after a parallel split), stuck tokens
+   (all-conditioned gateway with no default), unreachable nodes, dead ends, and a
+   missing start/end event.
 
 Don't claim a diagram is done until `validate` and `lint` both pass - they're
 quick and catch the mistakes (typo'd refs, missing layout, gateway deadlocks)
@@ -201,7 +204,7 @@ Details and workarounds are in `references/bpmn-reference.md`.
 | `summarize <file> [--json]` | Structured outline of the process(es), for explaining or for understanding before an edit |
 | `layout <in> [out] [--rebuild]` | Sync the diagram to the semantics: preserve & update existing DI, or generate it if absent. `--rebuild` re-lays-out from scratch |
 | `validate <file>` | Parse, report warnings, flag any flow element missing a shape or any per-plane overlapping shapes |
-| `lint <file>` | Find control-flow logic bugs: gateway split/join mismatches (deadlock, double execution) and stuck-token gateways |
+| `lint <file>` | Find control-flow logic bugs: gateway split/join mismatches (deadlock, double execution), stuck-token gateways, unreachable nodes, dead ends, missing start/end |
 
 All four live in `scripts/bpmn-tool.mjs`. The deeper element reference,
 recipes, and edge cases are in `references/bpmn-reference.md` - read it whenever

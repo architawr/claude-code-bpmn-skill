@@ -207,6 +207,60 @@ function nearestDivergingUpstream(startId, out, inc, nodes) {
   return null;
 }
 
+// Per-container structural checks: reachability, dead ends, missing start/end.
+// Worked per container (not flattened) because sequence flows never cross a
+// sub-process boundary, so its inner nodes have their own start/reachability.
+function structuralFindings(container, findings, isTop) {
+  const nodes = new Map();
+  const outE = new Map();
+  const attach = new Map();
+  for (const el of container.flowElements || []) if (shortType(el) !== 'SequenceFlow' && isFlowNode(el)) nodes.set(el.id, el);
+  for (const el of container.flowElements || []) {
+    if (shortType(el) !== 'SequenceFlow') continue;
+    const s = el.sourceRef && el.sourceRef.id;
+    const t = el.targetRef && el.targetRef.id;
+    if (s && t) { if (!outE.has(s)) outE.set(s, []); outE.get(s).push(t); }
+  }
+  for (const el of nodes.values()) {
+    if (shortType(el) === 'BoundaryEvent' && el.attachedToRef) {
+      const h = el.attachedToRef.id;
+      if (!attach.has(h)) attach.set(h, []);
+      attach.get(h).push(el.id);
+    }
+  }
+  const starts = [...nodes.values()].filter((n) => shortType(n) === 'StartEvent');
+  const ends = [...nodes.values()].filter((n) => shortType(n) === 'EndEvent');
+  const where = isTop ? '' : ` (in sub-process #${container.id})`;
+
+  if (isTop && nodes.size && !starts.length) {
+    findings.push(`NO START: the process has no start event${where}. Nothing tells the engine where to begin. Fix: add a start event.`);
+  }
+  if (isTop && nodes.size && !ends.length) {
+    findings.push(`NO END: the process has no end event${where}. Tokens have nowhere to finish. Fix: add an end event for each outcome.`);
+  }
+
+  if (starts.length) {
+    const seen = new Set();
+    const q = starts.map((s) => s.id);
+    while (q.length) {
+      const id = q.shift();
+      if (seen.has(id)) continue;
+      seen.add(id);
+      for (const t of outE.get(id) || []) q.push(t);
+      for (const b of attach.get(id) || []) q.push(b);
+    }
+    for (const [id, el] of nodes) {
+      if (shortType(el) === 'StartEvent') continue;
+      if (!seen.has(id)) findings.push(`UNREACHABLE: ${label(el)}${where} has no path from a start event, so it never executes. Fix: connect it with a sequence flow or remove it.`);
+    }
+  }
+
+  for (const [id, el] of nodes) {
+    if (shortType(el) === 'EndEvent') continue;
+    if (!(outE.get(id) || []).length) findings.push(`DEAD END: ${label(el)}${where} has no outgoing sequence flow, so the token stops there. Fix: connect it onward or end the branch with an end event.`);
+  }
+}
+
 export async function lintModel(xml) {
   const { defs } = await parseBpmn(xml);
   const findings = [];
@@ -248,6 +302,14 @@ export async function lintModel(xml) {
         findings.push(`NO DEFAULT: diverging ${t} ${nameOf(el, id)} has every outgoing flow guarded by a condition but no default. If none matches at runtime, the token stops here. Fix: mark one flow as default (or relax a condition).`);
       }
     }
+
+    structuralFindings(proc, findings, true);
+    const walkSub = (container) => {
+      for (const el of container.flowElements || []) {
+        if (isSubProcess(el)) { structuralFindings(el, findings, false); walkSub(el); }
+      }
+    };
+    walkSub(proc);
   }
   return findings;
 }

@@ -195,6 +195,16 @@ should be the same gateway family.**
   nothing matches leaves the token with nowhere to go.
   *Fix:* mark one flow `default=`, or leave one flow unconditioned as the else.
 
+- **Unreachable node.** A node with no path from any start event never executes.
+  *Fix:* connect it with a sequence flow, or delete it.
+
+- **Dead end.** A non-end node with no outgoing sequence flow swallows the token.
+  *Fix:* connect it onward, or finish the branch with an end event.
+
+- **Missing start/end.** A process with no start event has no defined trigger; one
+  with no end event has nowhere for tokens to finish. *Fix:* add them. `lint`
+  reports these per process (and reachability/dead ends per sub-process too).
+
 ## Other common mistakes
 
 - **Hand-writing DI.** Don't. Author semantics, run `layout`. Manual coordinates

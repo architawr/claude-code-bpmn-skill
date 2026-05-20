@@ -15,8 +15,28 @@ test('lint detects an AND-join after an XOR-split (deadlock)', async () => {
 });
 
 test('lint passes a clean linear diagram', async () => {
-  const findings = await lintModel(fixture('added-node.bpmn'));
+  const findings = await lintModel(fixture('clean-linear.bpmn'));
   assert.deepEqual(findings, []);
+});
+
+test('lint flags a node unreachable from any start event', async () => {
+  const findings = await lintModel(fixture('unreachable.bpmn'));
+  assert.equal(findings.length, 1);
+  assert.match(findings[0], /UNREACHABLE/);
+  assert.match(findings[0], /ORPH/);
+});
+
+test('lint flags a non-end node with no outgoing flow (dead end)', async () => {
+  const findings = await lintModel(fixture('deadend.bpmn'));
+  assert.equal(findings.length, 1);
+  assert.match(findings[0], /DEAD END/);
+  assert.match(findings[0], /STUCK/);
+});
+
+test('lint flags a process with no start event', async () => {
+  const findings = await lintModel(fixture('nostart.bpmn'));
+  assert.equal(findings.length, 1);
+  assert.match(findings[0], /NO START/);
 });
 
 test('summarize lists activities and sequence flows in plain text', async () => {
