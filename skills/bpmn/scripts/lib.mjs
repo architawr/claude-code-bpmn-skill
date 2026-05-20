@@ -486,6 +486,7 @@ async function generateCollaborationLayout(semXml, layoutProcess) {
   const collabPlane = moddle.create('bpmndi:BPMNPlane', { id: 'BPMNPlane_' + collab.id, bpmnElement: collab, planeElement: [] });
   defs.diagrams = [moddle.create('bpmndi:BPMNDiagram', { id: 'BPMNDiagram_' + collab.id, plane: collabPlane })];
 
+  const pools = [];
   let cursorY = 0;
   for (const p of collab.participants || []) {
     if (!p.processRef) continue; // empty pool (black box): drawn separately if needed
@@ -506,6 +507,7 @@ async function generateCollaborationLayout(semXml, layoutProcess) {
       bounds: moddle.create('dc:Bounds', { x: 0, y: cursorY, width: poolW, height: poolH }),
     });
     collabPlane.planeElement.push(pool);
+    pools.push(pool);
 
     addPlaneCoords(moddle, collabPlane, elemById, main, dx, dy);
 
@@ -522,6 +524,12 @@ async function generateCollaborationLayout(semXml, layoutProcess) {
     cursorY += poolH + POOL_GAP;
   }
 
+  // equalize pool widths so the diagram has clean, aligned right edges
+  if (pools.length) {
+    const maxW = Math.max(...pools.map((p) => p.bounds.width));
+    for (const p of pools) p.bounds.width = maxW;
+  }
+
   // message flows between pools
   const boundsIn = (id) => { const s = collabPlane.planeElement.find((pe) => pe.bpmnElement && pe.bpmnElement.id === id && pe.bounds); return s ? s.bounds : null; };
   for (const mf of collab.messageFlows || []) {
@@ -535,7 +543,7 @@ async function generateCollaborationLayout(semXml, layoutProcess) {
     collabPlane.planeElement.push(moddle.create('bpmndi:BPMNEdge', { id: mf.id + '_di', bpmnElement: mf, waypoint }));
   }
 
-  const { xml } = await moddle.toXML(defs);
+  const { xml } = await moddle.toXML(defs, { format: true });
   return xml;
 }
 
@@ -608,7 +616,7 @@ async function generateLanedLayout(semXml, layoutProcess) {
     if (a && b) plane.planeElement.push(fm.create('bpmndi:BPMNEdge', { id: fe.id + '_di', bpmnElement: fe, waypoint: orthoWaypoints(fm, a, b) }));
   }
 
-  const { xml } = await fm.toXML(defs);
+  const { xml } = await fm.toXML(defs, { format: true });
   return xml;
 }
 
@@ -699,31 +707,37 @@ function nudge(plane, box) {
 // neighbour has a shape yet (caller retries it on a later pass).
 function placeNode(moddle, plane, el, flows) {
   const { width, height } = sizeFor(shortType(el));
-  let anchor = null;
-  let side = 'right';
-  for (const f of flows) {
-    if (f.targetRef && f.targetRef.id === el.id) {
-      const b = boundsOf(plane, f.sourceRef && f.sourceRef.id);
-      if (b) { anchor = b; side = 'right'; break; }
-    }
-  }
-  if (!anchor) {
-    for (const f of flows) {
-      if (f.sourceRef && f.sourceRef.id === el.id) {
-        const b = boundsOf(plane, f.targetRef && f.targetRef.id);
-        if (b) { anchor = b; side = 'left'; break; }
-      }
-    }
-  }
-  if (!anchor && shortType(el) === 'BoundaryEvent' && el.attachedToRef) {
+
+  // A boundary event hangs on the bottom edge of its host.
+  if (shortType(el) === 'BoundaryEvent' && el.attachedToRef) {
     const b = boundsOf(plane, el.attachedToRef.id);
-    if (b) {
-      makeShape(moddle, plane, el, b.x + b.width / 2 - width / 2, b.y + b.height - height / 2, width, height);
-      return true;
-    }
+    if (b) { makeShape(moddle, plane, el, b.x + b.width / 2 - width / 2, b.y + b.height - height / 2, width, height); return true; }
   }
+
+  // Nearest placed upstream (source) and downstream (target) neighbours.
+  let up = null;
+  let down = null;
+  for (const f of flows) {
+    if (!up && f.targetRef && f.targetRef.id === el.id) up = boundsOf(plane, f.sourceRef && f.sourceRef.id) || null;
+    if (!down && f.sourceRef && f.sourceRef.id === el.id) down = boundsOf(plane, f.targetRef && f.targetRef.id) || null;
+  }
+
+  // Insertion between two placed nodes on a left-to-right path: open a gap by
+  // shifting the downstream node (and everything past it) right, then drop the
+  // new node onto the line aligned with its upstream neighbour. The shifted
+  // nodes' edges get fixed afterwards by rerouteStaleEdges.
+  if (up && down && down.x >= up.x) {
+    const x = up.x + up.width + GAP;
+    const delta = width + GAP;
+    for (const pe of plane.planeElement || []) if (pe.bounds && pe.bounds.x >= down.x) pe.bounds.x += delta;
+    const y = up.y + up.height / 2 - height / 2;
+    makeShape(moddle, plane, el, ...Object.values(nudge(plane, { x, y, width, height })));
+    return true;
+  }
+
+  const anchor = up || down;
   if (!anchor) return false;
-  const x = side === 'right' ? anchor.x + anchor.width + GAP : anchor.x - GAP - width;
+  const x = up ? anchor.x + anchor.width + GAP : anchor.x - GAP - width;
   const y = anchor.y + anchor.height / 2 - height / 2;
   makeShape(moddle, plane, el, ...Object.values(nudge(plane, { x, y, width, height })));
   return true;
@@ -740,12 +754,32 @@ function addEdge(moddle, plane, flow) {
   const s = boundsOf(plane, flow.sourceRef && flow.sourceRef.id);
   const t = boundsOf(plane, flow.targetRef && flow.targetRef.id);
   if (!s || !t) return; // an endpoint isn't on this plane; leave it for a modeler
-  const waypoint = [
-    moddle.create('dc:Point', { x: s.x + s.width, y: s.y + s.height / 2 }),
-    moddle.create('dc:Point', { x: t.x, y: t.y + t.height / 2 }),
-  ];
-  const edge = moddle.create('bpmndi:BPMNEdge', { id: flow.id + '_di', bpmnElement: flow, waypoint });
+  const edge = moddle.create('bpmndi:BPMNEdge', { id: flow.id + '_di', bpmnElement: flow, waypoint: orthoWaypoints(moddle, s, t) });
   (plane.planeElement || (plane.planeElement = [])).push(edge);
+}
+
+const pointNearBounds = (p, b, tol = 12) =>
+  p.x >= b.x - tol && p.x <= b.x + b.width + tol && p.y >= b.y - tol && p.y <= b.y + b.height + tol;
+
+// Re-route sequence-flow edges that no longer touch their endpoints (e.g. a flow
+// was retargeted, or its node moved). Correct edges - endpoints still on their
+// source/target shape - are left exactly as they are, so hand-tuned routing
+// survives.
+function rerouteStaleEdges(defs, moddle) {
+  const planeOf = planesByContainer(defs);
+  for (const c of containersOf(defs)) {
+    const plane = planeOf.get(c.id);
+    if (!plane) continue;
+    for (const pe of plane.planeElement || []) {
+      if (localName(pe) !== 'BPMNEdge' || !pe.bpmnElement || shortType(pe.bpmnElement) !== 'SequenceFlow') continue;
+      const s = boundsOf(plane, pe.bpmnElement.sourceRef && pe.bpmnElement.sourceRef.id);
+      const t = boundsOf(plane, pe.bpmnElement.targetRef && pe.bpmnElement.targetRef.id);
+      if (!s || !t) continue;
+      const wp = pe.waypoint || [];
+      const ok = wp.length >= 2 && pointNearBounds(wp[0], s) && pointNearBounds(wp[wp.length - 1], t);
+      if (!ok) pe.waypoint = orthoWaypoints(moddle, s, t);
+    }
+  }
 }
 
 // Give a shape (and edges) to every semantic element that lacks DI, placed next
@@ -911,7 +945,7 @@ async function placeExtras(xml) {
       }
     }
   }
-  return changed ? (await moddle.toXML(defs)).xml : xml;
+  return changed ? (await moddle.toXML(defs, { format: true })).xml : xml;
 }
 
 /**
@@ -927,10 +961,11 @@ export async function layoutModel(xml, opts = {}) {
   if (opts.rebuild || !hasDI) {
     out = await generateLayout(xml);
   } else {
-    // resync: preserve existing geometry; prune removed, place new.
+    // resync: preserve existing geometry; prune removed, place new, fix stale edges.
     pruneDI(defs);
     addDI(defs, moddle);
-    out = (await moddle.toXML(defs)).xml;
+    rerouteStaleEdges(defs, moddle);
+    out = (await moddle.toXML(defs, { format: true })).xml;
   }
   return await placeExtras(out);
 }

@@ -35,6 +35,16 @@ test('collaboration pools do not overlap each other', async () => {
   assert.ok(disjoint, 'the two pools occupy separate vertical bands');
 });
 
+test('pools of different content widths are equalized and left-aligned', async () => {
+  const out = await layoutModel(fixture('collab-uneven.bpmn'));
+  const { defs } = await parseBpmn(out);
+  const plane = collabPlane(defs);
+  const a = shape(plane, 'Pa').bounds; // 3-node pool
+  const b = shape(plane, 'Pb').bounds; // 5-node pool (naturally wider)
+  assert.equal(a.x, b.x, 'pools left-aligned');
+  assert.equal(a.width, b.width, 'pools share the same (max) width');
+});
+
 test('a laid-out collaboration validates clean', async () => {
   const out = await layoutModel(fixture('collab.bpmn'));
   const v = await validateModel(out);

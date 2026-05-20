@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">
+  <bpmn:collaboration id="C1">
+    <bpmn:participant id="Pa" name="Customer" processRef="Pcust"/>
+    <bpmn:participant id="Pb" name="Shop" processRef="Pshop"/>
+    <bpmn:messageFlow id="mf1" sourceRef="T_order" targetRef="S_shop"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Pcust">
+    <bpmn:startEvent id="S_c"/><bpmn:task id="T_order" name="Order"/><bpmn:endEvent id="E_c"/>
+    <bpmn:sequenceFlow id="c1" sourceRef="S_c" targetRef="T_order"/>
+    <bpmn:sequenceFlow id="c2" sourceRef="T_order" targetRef="E_c"/>
+  </bpmn:process>
+  <bpmn:process id="Pshop">
+    <bpmn:startEvent id="S_shop"/><bpmn:task id="T_recv" name="Receive"/><bpmn:task id="T_pick" name="Pick"/>
+    <bpmn:task id="T_ship" name="Ship"/><bpmn:endEvent id="E_s"/>
+    <bpmn:sequenceFlow id="s1" sourceRef="S_shop" targetRef="T_recv"/>
+    <bpmn:sequenceFlow id="s2" sourceRef="T_recv" targetRef="T_pick"/>
+    <bpmn:sequenceFlow id="s3" sourceRef="T_pick" targetRef="T_ship"/>
+    <bpmn:sequenceFlow id="s4" sourceRef="T_ship" targetRef="E_s"/>
+  </bpmn:process>
+</bpmn:definitions>
