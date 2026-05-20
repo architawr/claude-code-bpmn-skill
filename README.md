@@ -46,6 +46,18 @@ Or, for local development without installing:
 claude --plugin-dir ./claude-code-bpmn-skill
 ```
 
+## Commands
+
+The skill is model-invoked automatically, but the plugin also adds explicit
+slash commands (namespaced `/bpmn:`):
+
+| Command | What it does |
+|---|---|
+| `/bpmn:explain <file.bpmn>` | Read a diagram and explain it in plain language |
+| `/bpmn:create <description>` | Model a new diagram from a text description |
+| `/bpmn:edit <file.bpmn> — <change>` | Apply a change, then re-layout, validate, lint |
+| `/bpmn:validate <file.bpmn>` | Structural validation + control-flow lint, with fixes |
+
 ## Usage
 
 The skill is invoked automatically, but the bundled tool can also be run directly:
