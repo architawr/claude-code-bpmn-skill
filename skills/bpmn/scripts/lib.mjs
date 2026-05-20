@@ -314,6 +314,60 @@ export async function lintModel(xml) {
   return findings;
 }
 
+// --- Utilities: diff and find ---
+
+const descOf = (el) => ({ id: el.id, name: el.name || null, type: shortType(el) });
+
+function flowElemMap(defs) {
+  const map = new Map();
+  for (const root of defs.rootElements || []) {
+    if (shortType(root) !== 'Process') continue;
+    const walk = (c) => { for (const el of c.flowElements || []) { if (!map.has(el.id)) map.set(el.id, el); if (el.flowElements) walk(el); } };
+    walk(root);
+  }
+  return map;
+}
+
+// Semantic + structural diff between two models: which elements were added,
+// removed, renamed, retyped, and which sequence flows were rewired.
+export async function diffModels(xmlA, xmlB) {
+  const A = (await parseBpmn(xmlA)).defs;
+  const B = (await parseBpmn(xmlB)).defs;
+  const ma = flowElemMap(A);
+  const mb = flowElemMap(B);
+  const res = { added: [], removed: [], renamed: [], retyped: [], rewired: [] };
+  const isFlow = (el) => shortType(el) === 'SequenceFlow';
+  for (const [id, el] of mb) if (!ma.has(id)) res.added.push(descOf(el));
+  for (const [id, el] of ma) if (!mb.has(id)) res.removed.push(descOf(el));
+  for (const [id, a] of ma) {
+    const b = mb.get(id);
+    if (!b) continue;
+    if (shortType(a) !== shortType(b)) res.retyped.push({ id, from: shortType(a), to: shortType(b) });
+    else if (!isFlow(a) && (a.name || '') !== (b.name || '')) res.renamed.push({ id, from: a.name || '', to: b.name || '' });
+    if (isFlow(a) && isFlow(b)) {
+      const ea = `${a.sourceRef && a.sourceRef.id}->${a.targetRef && a.targetRef.id}`;
+      const eb = `${b.sourceRef && b.sourceRef.id}->${b.targetRef && b.targetRef.id}`;
+      if (ea !== eb) res.rewired.push({ id, from: ea, to: eb });
+    }
+  }
+  return res;
+}
+
+// Find flow elements whose name or type contains the term (case-insensitive).
+export async function findModel(xml, term) {
+  const { defs } = await parseBpmn(xml);
+  const t = (term || '').toLowerCase();
+  const out = [];
+  for (const c of containersOf(defs)) {
+    for (const el of c.flowElements || []) {
+      const name = (el.name || '').toLowerCase();
+      const type = shortType(el).toLowerCase();
+      if (!t || name.includes(t) || type.includes(t)) out.push(descOf(el));
+    }
+  }
+  return out;
+}
+
 // Every Process container, recursively (process + nested sub-processes).
 function containersOf(defs) {
   const out = [];

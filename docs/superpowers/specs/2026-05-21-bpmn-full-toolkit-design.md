@@ -99,8 +99,11 @@ expanded and given a plane) is Phase 2.
 - **Phase 3 — Deeper `validate` + `lint`.** New rules: unreachable nodes, dangling
   `attachedToRef`, missing start/end, broader gateway balance; wider element
   coverage in `validate`.
-- **Phase 4 — Utilities.** `diff <a> <b>` (semantic + structural), model
-  query/search, id/name normalization.
+- **Phase 4 — Utilities.** `diff <a> <b>` (semantic + structural) and
+  `find <file> <term>` (query by name/type). **Id/name normalization is
+  deliberately omitted:** silently rewriting element IDs breaks external
+  references (Camunda job workers, links, history), so it's unsafe to automate -
+  not worth the footgun.
 
 ## Testing
 

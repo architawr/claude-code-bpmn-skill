@@ -77,6 +77,11 @@ install step was skipped - run it and retry.
 The summarize output is your source of truth for "what does this diagram do" -
 read from it rather than eyeballing the XML, especially for anything non-trivial.
 
+To **locate** a specific element before an edit, use `find <file> <term>` (matches
+name or type). To **compare** two diagrams - As-Is vs To-Be, or to show exactly
+what an edit changed - use `diff <a> <b>`; it reports elements added, removed,
+renamed, or retyped and any sequence flows that were rewired.
+
 When the user wants a **review** ("is this correct?", "find the bug", "why does
 it hang?"), also run `lint`. It catches control-flow bugs that are valid XML and
 pass `validate` but are wrong behavior - the kind that are easy to miss by eye:
@@ -205,6 +210,8 @@ Details and workarounds are in `references/bpmn-reference.md`.
 | `layout <in> [out] [--rebuild]` | Sync the diagram to the semantics: preserve & update existing DI, or generate it if absent. `--rebuild` re-lays-out from scratch |
 | `validate <file>` | Parse, report warnings, flag any flow element missing a shape or any per-plane overlapping shapes |
 | `lint <file>` | Find control-flow logic bugs: gateway split/join mismatches (deadlock, double execution), stuck-token gateways, unreachable nodes, dead ends, missing start/end |
+| `diff <a> <b>` | Semantic + structural diff: elements added/removed/renamed/retyped and sequence flows rewired (e.g. As-Is vs To-Be, or reviewing an edit) |
+| `find <file> <term>` | List flow elements whose name or type contains `term` (case-insensitive) - quick lookup before an edit |
 
 All four live in `scripts/bpmn-tool.mjs`. The deeper element reference,
 recipes, and edge cases are in `references/bpmn-reference.md` - read it whenever
