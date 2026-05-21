@@ -39,7 +39,7 @@ regenerating layout, validating, and linting control flow.
 This repository is both the plugin and a one-plugin marketplace:
 
 ```text
-/plugin marketplace add architawr/claude-code-bpmn-skill
+/plugin marketplace add architawr/claude-bpmn-skill
 /plugin install bpmn@bpmn-tools
 /reload-plugins
 ```
@@ -51,7 +51,7 @@ work with `.bpmn` files or ask to model/review a process. It is namespaced as
 Or, for local development without installing:
 
 ```bash
-claude --plugin-dir ./claude-code-bpmn-skill
+claude --plugin-dir ./claude-bpmn-skill
 ```
 
 ## Commands

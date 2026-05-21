@@ -6,7 +6,7 @@
     "name": "Artur Karapetyan"
   },
   "license": "MIT",
-  "homepage": "https://github.com/architawr/claude-code-bpmn-skill",
-  "repository": "https://github.com/architawr/claude-code-bpmn-skill",
+  "homepage": "https://github.com/architawr/claude-bpmn-skill",
+  "repository": "https://github.com/architawr/claude-bpmn-skill",
   "keywords": ["bpmn", "bpmn2", "process", "workflow", "diagram", "camunda", "bpmn.io", "modeling"]
 }
